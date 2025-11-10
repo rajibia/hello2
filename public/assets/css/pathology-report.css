@@ -1,0 +1,564 @@
+/* Pathology Report Modal Styles */
+.pathology-report-modal .modal-content {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.pathology-report-header {
+    background: white;
+    padding: 20px 25px 15px 25px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.pathology-report-title {
+    color: #1f2937;
+    font-weight: 700;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.pathology-report-subtitle {
+    color: #1e40af;
+    font-weight: 600;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.pathology-report-body {
+    padding: 20px 25px;
+    background: #f9fafb;
+}
+
+/* Administrative Details Section */
+.pathology-admin-details {
+    margin-bottom: 25px;
+}
+
+.pathology-admin-label {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Test Results Sections */
+.pathology-results-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.pathology-results-header {
+    background: #fbbf24;
+    padding: 10px 20px;
+    text-align: center;
+}
+
+.pathology-results-header h6 {
+    color: #202020;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+/* Test Results Table */
+.pathology-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.pathology-results-table thead {
+    background: #f3f4f6;
+}
+
+.pathology-results-table th {
+    color: #374151;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 8px;
+    text-align: center;
+    border: 1px solid #d1d5db;
+}
+
+.pathology-results-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.pathology-results-table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.pathology-results-table td {
+    padding: 6px 8px;
+    font-size: 12px;
+    border: 1px solid #e5e7eb;
+    vertical-align: middle;
+}
+
+.pathology-results-table td:first-child {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #374151;
+}
+
+/* Input Fields */
+.pathology-input-field {
+    border: none;
+    background: transparent;
+    font-weight: 500;
+    color: #374151;
+    font-size: 12px;
+    text-align: center;
+    width: 100%;
+    padding: 4px;
+}
+
+.pathology-input-field:focus {
+    outline: none;
+    background: #f3f4f6;
+    border-radius: 3px;
+}
+
+/* Flag Styling */
+.pathology-flag {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    display: inline-block;
+    min-width: 50px;
+    text-align: center;
+}
+
+.flag-low {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    animation: flagUpdate 0.5s ease;
+}
+
+.flag-high {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #f87171;
+    animation: flagUpdate 0.5s ease;
+}
+
+.flag-normal {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+    animation: flagUpdate 0.5s ease;
+}
+
+@keyframes flagUpdate {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Column Width Adjustments */
+.pathology-results-table.two-columns th:nth-child(1),
+.pathology-results-table.two-columns td:nth-child(1) {
+    width: 50%;
+}
+
+.pathology-results-table.two-columns th:nth-child(2),
+.pathology-results-table.two-columns td:nth-child(2) {
+    width: 50%;
+}
+
+.pathology-results-table.three-columns th:nth-child(1),
+.pathology-results-table.three-columns td:nth-child(1) {
+    width: 30%;
+}
+
+.pathology-results-table.three-columns th:nth-child(2),
+.pathology-results-table.three-columns td:nth-child(2) {
+    width: 30%;
+}
+
+.pathology-results-table.three-columns th:nth-child(3),
+.pathology-results-table.three-columns td:nth-child(3) {
+    width: 25%;
+}
+
+.pathology-results-table.three-columns th:nth-child(4),
+.pathology-results-table.three-columns td:nth-child(4) {
+    width: 15%;
+}
+
+/* Signature Section */
+.signature-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #e5e7eb;
+}
+
+.signature-line {
+    border-top: 1px solid #374151;
+    width: 200px;
+    margin-top: 40px;
+    margin-bottom: 5px;
+}
+
+.signature-label {
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Modal Footer */
+.pathology-report-modal .modal-footer {
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    padding: 15px 25px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .pathology-report-header {
+        padding: 15px 20px 10px 20px;
+    }
+
+    .pathology-report-body {
+        padding: 15px 20px;
+    }
+
+    .pathology-results-table th,
+    .pathology-results-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+
+    .pathology-admin-label {
+        font-size: 11px;
+    }
+}
+
+/* Print styles */
+@media print {
+    /* Hide modal backdrop and unnecessary elements */
+    .modal-backdrop,
+    .modal-header,
+    .btn-close,
+    .no-print,
+    .btn,
+    button {
+        display: none !important;
+    }
+
+    /* Make modal full screen for printing */
+    .modal-dialog {
+        max-width: none !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+        height: 100% !important;
+    }
+
+    .modal-body {
+        padding: 20px !important;
+        overflow: visible !important;
+        max-height: none !important;
+    }
+
+    /* Ensure pathology report container is properly styled for print */
+    .pathology-report-container {
+        background: white !important;
+        padding: 20px !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: none !important;
+    }
+
+    /* Ensure header layout is properly displayed in print */
+    .pathology-report-header {
+        background: white !important;
+        padding: 20px 25px 15px 25px !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        margin-bottom: 20px !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .pathology-report-header .d-flex {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 15px !important;
+    }
+
+    .pathology-report-header .text-center {
+        text-align: center !important;
+        flex-grow: 1 !important;
+    }
+
+    .pathology-report-title {
+        color: #1f2937 !important;
+        font-weight: 700 !important;
+        font-size: 18px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin: 0 !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .pathology-report-subtitle {
+        color: #1e40af !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        margin: 0 !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Ensure proper text colors in print */
+    .pathology-admin-label {
+        color: inherit !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    .pathology-admin-details .row:first-child,
+    .pathology-admin-details .row:first-child * {
+        background: #fbbf24 !important;
+        background-color: #fbbf24 !important;
+    }
+
+    .pathology-admin-details .row:first-child .pathology-admin-label {
+        color: #92400e !important;
+    }
+
+    .pathology-admin-details .row:not(:first-child) .pathology-admin-label {
+        color: #374151 !important;
+    }
+
+    .pathology-results-header,
+    .pathology-results-header * {
+        background: #fbbf24 !important;
+        background-color: #fbbf24 !important;
+    }
+
+    .pathology-results-header h6 {
+        color: #202020 !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin: 0 !important;
+    }
+
+    /* Ensure proper page breaks */
+    .pathology-results-section {
+        page-break-inside: avoid !important;
+        background: white !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        margin-bottom: 20px !important;
+        overflow: visible !important;
+    }
+
+    /* Remove any shadows or effects */
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Handle logo in print */
+    .pathology-report-header .me-3 {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .pathology-report-header .me-3 img {
+        max-width: 60px !important;
+        max-height: 60px !important;
+        object-fit: contain !important;
+    }
+
+    /* Ensure signature section is properly styled */
+    .signature-section {
+        margin-top: 30px !important;
+        padding-top: 20px !important;
+        border-top: 2px solid #e5e7eb !important;
+        page-break-inside: avoid !important;
+    }
+
+    .signature-line {
+        border-top: 1px solid #374151 !important;
+        width: 200px !important;
+        margin-top: 40px !important;
+        margin-bottom: 5px !important;
+    }
+
+    .signature-label {
+        font-size: 11px !important;
+        color: #6b7280 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* Ensure proper spacing and layout */
+    .row {
+        margin: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+    }
+
+    .col-4, .col-6, .col-12 {
+        padding: 0 8px !important;
+    }
+
+    .col-4 {
+        flex: 0 0 33.333333% !important;
+        max-width: 33.333333% !important;
+    }
+
+    .col-6 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+
+    .col-12 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    .text-end {
+        text-align: right !important;
+    }
+
+    .text-center {
+        text-align: center !important;
+    }
+
+    /* Administrative Details Section */
+    .pathology-admin-details {
+        margin-bottom: 25px !important;
+    }
+
+    .pathology-admin-details .row {
+        margin: 0 0 8px 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+    }
+
+    .pathology-admin-details .row:first-child {
+        background: #fbbf24 !important;
+        background-color: #fbbf24 !important;
+        padding: 8px 12px !important;
+        border-radius: 4px !important;
+        margin: 0 0 8px 0 !important;
+    }
+
+    .pathology-admin-details .row:not(:first-child) {
+        background: white !important;
+        background-color: white !important;
+        padding: 8px 12px !important;
+        border-radius: 4px !important;
+        border: 1px solid #e5e7eb !important;
+        margin: 0 0 8px 0 !important;
+    }
+
+    .pathology-admin-details .col-4,
+    .pathology-admin-details .col-6 {
+        padding: 0 8px !important;
+    }
+
+    /* Ensure table styles are correct */
+    .pathology-results-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-bottom: 15px !important;
+        background: white !important;
+    }
+
+    .pathology-results-table thead tr {
+        background: #fbbf24 !important;
+        background-color: #fbbf24 !important;
+    }
+
+    .pathology-results-table thead th {
+        color: #202020 !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        border: 1px solid #d1d5db !important;
+        padding: 8px !important;
+        text-align: center !important;
+    }
+
+    .pathology-results-table tbody td {
+        border: 1px solid #e5e7eb !important;
+        padding: 8px !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+        font-size: 12px !important;
+    }
+
+    .pathology-results-table tbody tr:nth-child(odd) {
+        background: #fbbf24 !important;
+        background-color: #fbbf24 !important;
+    }
+
+    .pathology-results-table tbody tr:nth-child(even) {
+        background: white !important;
+        background-color: white !important;
+    }
+
+    /* Ensure flag styles are correct */
+    .pathology-flag {
+        padding: 2px 8px !important;
+        border-radius: 3px !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+    }
+
+    .flag-low {
+        background: #fef3c7 !important;
+        color: #92400e !important;
+    }
+
+    .flag-high {
+        background: #fee2e2 !important;
+        color: #991b1b !important;
+    }
+
+    .flag-normal {
+        background: #d1fae5 !important;
+        color: #065f46 !important;
+    }
+}

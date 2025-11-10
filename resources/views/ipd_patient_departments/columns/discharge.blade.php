@@ -1,0 +1,1 @@
+{!! $row->discharge_status_display !!}

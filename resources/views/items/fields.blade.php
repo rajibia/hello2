@@ -1,0 +1,33 @@
+<div class="row">
+    <div class="col-md-4">
+        <div class="form-group mb-5">
+            {!! Form::label('name', __('messages.item.name') . ':', ['class' => 'form-label']) !!}
+            <span class="required"></span>
+            {!! Form::text('name', null, ['id'=>'itemName','class' => 'form-control', 'required','placeholder'=>__('messages.item.name')]) !!}
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group mb-5">
+            {!! Form::label('item_category_id', __('messages.item.item_category') . ':', ['class' => 'form-label']) !!}
+            <span class="required"></span>
+            {{ Form::select('item_category_id', $itemCategories, null, ['class' => 'form-select', 'required', 'id' => 'itemCategory', 'data-control' => 'select2', 'placeholder' => __('messages.common.choose') . ' ' . __('messages.item_category.item_category')]) }}
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group mb-5">
+            {!! Form::label('unit_id', __('messages.item.unit') . ':', ['class' => 'form-label']) !!}
+            <span class="required"></span>
+            {{ Form::select('unit_id', $units, null, ['class' => 'form-select', 'required', 'id' => 'itemUnit', 'data-control' => 'select2', 'placeholder' => __('messages.common.choose') . ' ' . __('messages.item.unit')]) }}
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="form-group mb-5">
+            {!! Form::label('description', __('messages.item.description').':', ['class' => 'form-label']) !!}
+            {{ Form::textarea('description', null, ['class' => 'form-control', 'rows' => 4,'placeholder'=>__('messages.item.description')]) }}
+        </div>
+    </div>
+    <div class="d-flex justify-content-end">
+        {{ Form::submit(__('messages.common.save'), ['class' => 'btn btn-primary me-3', 'id' => 'itemSave']) }}
+        <a href="{!! route('items.index') !!}" class="btn btn-secondary me-2">{!! __('messages.common.cancel') !!}</a>
+    </div>
+</div>

@@ -1,0 +1,14 @@
+
+<a href="{{ route('accounts-medicine-bills.show', [$row->id]) }}"
+    class='btn px-2 text-primary fs-3 ps-0'> <i class="fas fa-eye text-success"></i></a>
+ @if(isset($row->issue_status) && $row->issue_status == false) 
+    <a
+    href="{{ route('accounts-medicine-bills.edit', [$row->id]) }}"
+    title="<?php echo __('messages.common.edit') ?>" class="btn px-2 edit-btn text-primary fs-3 py-2">
+        <i class="fa-solid fa-pen-to-square"></i>
+    </a>
+    {{-- <a title="<?php echo __('messages.common.delete'); ?>" data-id="{{ $row->id }}"
+        class="btn medicine-bill-delete-btn px-2 text-danger pe-0 py-2">
+        <i class="fa-solid fa-trash"></i>
+    </a> --}}
+@endif

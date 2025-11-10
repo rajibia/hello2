@@ -1,0 +1,1 @@
+{{ $row->patient->maternity->count() }}

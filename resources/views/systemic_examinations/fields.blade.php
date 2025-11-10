@@ -1,0 +1,217 @@
+<div class="row gx-10 mb-5">
+    <div class="col-md-4 col-6 mb-4 mb-lg-0 d-flex align-items-center justify-content-start">
+        <h4>Examination Number # <span
+                class="text-gray-500">{{ $examination_number = \App\Models\SystemicExamination::generateUniqueExaminationNumber() }}</span>
+                <input type="hidden" value="{{ $examination_number }}" name="examination_number" />
+        </h4>
+    </div>
+    @if($patient_id != '')
+        <div class="form-group col-md-4 mb-5">
+            {{ Form::label('patient_id', __('messages.prescription.patient') . ':', ['class' => 'form-label']) }}
+            <span class="required"></span>
+            {{ Form::select('patient_id', $patients, $patient_id ?? null, ['class' => 'form-select', ($patient_id != '' ? 'disabled' : ''), 'required', 'id' => 'vitalsPatientId', 'placeholder' => __('messages.document.select_patient')]) }}
+        </div>
+    
+        <input type="hidden" name="patient_id" value="{{ $patient_id }}">
+        <input type="hidden" name="create_from_route" value="patient">
+    @endif
+
+    @if ($opd_id != '') 
+        <div class="form-group col-md-4 mb-5">
+            {{ Form::label('opd_number', __('messages.opd_patient.opd_number') . ':', ['class' => 'form-label']) }}
+            <span class="required"></span>
+            {{ Form::select('opd_id', $opds, $opd_id ?? null, ['class' => 'form-select', ($opd_id != '' ? 'disabled' : ''), 'required', 'id' => 'vitalsOPDId', 'placeholder' => __('messages.document.select_patient')]) }}
+        </div>
+        @if($opd_id != '')
+            <input type="hidden" name="opd_id" value="{{ $opd_id }}">
+            <input type="hidden" name="create_from_route" value="opd">
+        @endif
+    @endif
+
+    @if ($ipd_id != '') 
+        <div class="form-group col-md-4 mb-5">
+            {{ Form::label('ipd_number', __('messages.ipd_patient.ipd_number') . ':', ['class' => 'form-label']) }}
+            <span class="required"></span>
+            {{ Form::select('ipd_id', $ipds, $ipd_id ?? null, ['class' => 'form-select', ($ipd_id != '' ? 'disabled' : ''), 'required', 'id' => 'vitalsIPDId', 'placeholder' => __('messages.document.select_patient')]) }}
+        </div>
+        @if($ipd_id != '')
+            <input type="hidden" name="ipd_id" value="{{ $ipd_id }}">
+            <input type="hidden" name="create_from_route" value="ipd">
+        @endif
+    @endif
+
+    
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Body Part</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Lungs</td>
+                    <td>
+                        {{ Form::radio('lungs_status', 0, true) }}
+                        {{ Form::label('lungs_status_unknown', 'Unknown') }}
+                        {{ Form::radio('lungs_status', 1) }}
+                        {{ Form::label('lungs_status_yes', 'Yes') }}
+                        {{ Form::radio('lungs_status', 2) }}
+                        {{ Form::label('lungs_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('lungs_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Cardio</td>
+                    <td>
+                        {{ Form::radio('cardio_status', 0, true) }}
+                        {{ Form::label('cardio_status_unknown', 'Unknown') }}
+                        {{ Form::radio('cardio_status', 1) }}
+                        {{ Form::label('cardio_status_yes', 'Yes') }}
+                        {{ Form::radio('cardio_status', 2) }}
+                        {{ Form::label('cardio_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('cardio_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Abdomen</td>
+                    <td>
+                        {{ Form::radio('abdomen_status', 0, true) }}
+                        {{ Form::label('abdomen_status_unknown', 'Unknown') }}
+                        {{ Form::radio('abdomen_status', 1) }}
+                        {{ Form::label('abdomen_status_yes', 'Yes') }}
+                        {{ Form::radio('abdomen_status', 2) }}
+                        {{ Form::label('abdomen_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('abdomen_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Ear</td>
+                    <td>
+                        {{ Form::radio('ear_status', 0, true) }}
+                        {{ Form::label('ear_status_unknown', 'Unknown') }}
+                        {{ Form::radio('ear_status', 1) }}
+                        {{ Form::label('ear_status_yes', 'Yes') }}
+                        {{ Form::radio('ear_status', 2) }}
+                        {{ Form::label('ear_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('ear_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>Nose</td>
+                    <td>
+                        {{ Form::radio('nose_status', 0, true) }}
+                        {{ Form::label('nose_status_unknown', 'Unknown') }}
+                        {{ Form::radio('nose_status', 1) }}
+                        {{ Form::label('nose_status_yes', 'Yes') }}
+                        {{ Form::radio('nose_status', 2) }}
+                        {{ Form::label('nose_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('nose_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>Throat</td>
+                    <td>
+                        {{ Form::radio('throat_status', 0, true) }}
+                        {{ Form::label('throat_status_unknown', 'Unknown') }}
+                        {{ Form::radio('throat_status', 1) }}
+                        {{ Form::label('throat_status_yes', 'Yes') }}
+                        {{ Form::radio('throat_status', 2) }}
+                        {{ Form::label('throat_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('throat_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>Musco</td>
+                    <td>
+                        {{ Form::radio('musco_status', 0, true) }}
+                        {{ Form::label('musco_status_unknown', 'Unknown') }}
+                        {{ Form::radio('musco_status', 1) }}
+                        {{ Form::label('musco_status_yes', 'Yes') }}
+                        {{ Form::radio('musco_status', 2) }}
+                        {{ Form::label('musco_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('musco_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>Nervous</td>
+                    <td>
+                        {{ Form::radio('nervous_status', 0, true) }}
+                        {{ Form::label('nervous_status_unknown', 'Unknown') }}
+                        {{ Form::radio('nervous_status', 1) }}
+                        {{ Form::label('nervous_status_yes', 'Yes') }}
+                        {{ Form::radio('nervous_status', 2) }}
+                        {{ Form::label('nervous_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('nervous_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>Skin</td>
+                    <td>
+                        {{ Form::radio('skin_status', 0, true) }}
+                        {{ Form::label('skin_status_unknown', 'Unknown') }}
+                        {{ Form::radio('skin_status', 1) }}
+                        {{ Form::label('skin_status_yes', 'Yes') }}
+                        {{ Form::radio('skin_status', 2) }}
+                        {{ Form::label('skin_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('skin_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>Eye</td>
+                    <td>
+                        {{ Form::radio('eye_status', 0, true) }}
+                        {{ Form::label('eye_status_unknown', 'Unknown') }}
+                        {{ Form::radio('eye_status', 1) }}
+                        {{ Form::label('eye_status_yes', 'Yes') }}
+                        {{ Form::radio('eye_status', 2) }}
+                        {{ Form::label('eye_status_no', 'No') }}
+                    </td>
+                    <td>
+                        {{ Form::text('eye_description', null, ['class' => 'form-control', 'placeholder' => 'Description', 'required']) }}
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="d-flex justify-content-end">
+    <button type="submit" class="btn btn-primary me-2 btnVitalsSave">{{ __('messages.common.save') }}</button>
+    @if($patient_id != '')
+        <a href="{!! route('patients.show', $patient_id) !!}"
+        class="btn btn-secondary">{!! __('messages.common.cancel') !!}</a>
+    @endif
+   
+</div>
+

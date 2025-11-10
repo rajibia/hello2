@@ -1,0 +1,5 @@
+@modulePermission('prescriptions', 'view')
+<a href="{{url('enquiry'.'/'.$row->id)}}" title="<?php echo __('messages.common.view') ?>" class="btn px-1 text-info fs-3 ps-0">
+    <i class="fas fa-eye"></i>
+</a>
+@endmodulePermission
