@@ -85,6 +85,12 @@ class PathologyTestRepository extends BaseRepository
             $amountPaid = 0;
             $balance = $total;
 
+            // --- FIX/SAFEGUARD: Remove 'id' from input array if present ---
+            if (isset($input['id'])) {
+                unset($input['id']);
+            }
+            // -----------------------------------------------------------------
+
             // Create pathology test
             $pathologyTest = PathologyTest::create([
                 'bill_no' => $billNo,

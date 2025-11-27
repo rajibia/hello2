@@ -176,7 +176,7 @@ listenClick('.showPathologyTestBillBtn', function (event) {
                 var data = result.data;
 
                 // Populate basic modal fields
-                $('#showPathologyBillNo').text(data.bill_no);
+                $('#showPathologyBillNo').text(data.lab_number || data.bill_no);
                 $('#showPathologyTestPatient').text(data.patient_name);
                 $('#showPathologyTestDoctor').text(data.doctor);
                 $('#showPathologyTestCreatedOn').text(data.created_on);

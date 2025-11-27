@@ -38,6 +38,26 @@ class ReportsController extends AppBaseController
     {
         return view('reports.discharge');
     }
+// In app/Http/Controllers/ReportsController.php (or similar)
+
+
+
+    public function laboratoryAttendance()
+    {
+        // Logic to fetch and prepare attendance data (e.g., from MONTHLY REPORTS MSOFT.pdf [cite: 4, 5])
+        // and return the view.
+        return view('reports.laboratory_attendance');
+    }
+
+    /**
+     * Display the Test Investigations Done Report page.
+     */
+    public function laboratoryInvestigation()
+    {
+        // Logic to fetch and prepare test investigation data (e.g., from MONTHLY REPORTS MSOFT.pdf [cite: 6, 7])
+        // and return the view.
+        return view('reports.laboratory_investigation');
+    }
 
     /**
      * Display the OPD statement report.
@@ -77,6 +97,29 @@ class ReportsController extends AppBaseController
     public function transactionReport()
     {
         return view('reports.transaction_report');
+    }
+
+    /**
+     * Export transaction report as PDF
+     */
+    public function exportTransactionPDF(Request $request)
+    {
+        try {
+            $startDate = $request->get('startDate', now()->startOfDay());
+            $endDate = $request->get('endDate', now()->endOfDay());
+            $transactionType = $request->get('transactionType', 'all');
+            
+            // Get transactions logic (simplified version)
+            $transactions = [];
+            $totalAmount = 0;
+            
+            $html = view('livewire.transaction-report-pdf', compact('transactions', 'startDate', 'endDate', 'totalAmount'))->render();
+            $pdf = \PDF::loadHTML($html);
+            
+            return $pdf->download('transaction-report-' . now()->format('Y-m-d_H-i-s') . '.pdf');
+        } catch (\Exception $e) {
+            return back()->withError('Failed to generate PDF: ' . $e->getMessage());
+        }
     }
     
     /**

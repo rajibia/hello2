@@ -140,7 +140,12 @@
                                                 @foreach($invoice->invoiceItems as $invoiceItem)
                                                     @php $totalAmount += $invoiceItem->total; @endphp
                                                     <tr>
-                                                        <td>{{ $invoiceItem->charge->chargeCategory->name ?? ($invoiceItem->charge->code ?? ($invoiceItem->description ?? 'N/A')) }}</td>
+     
+<td>
+    <strong>
+        {{ $invoiceItem->description ?? $invoiceItem->charge?->chargeCategory?->name ?? '—' }}
+    </strong>
+</td>
                                                         <td>{{ $invoiceItem->quantity ?? 'N/A' }}</td>
                                                         <td>{{ checkNumberFormat($invoiceItem->price ?? 0, strtoupper(getCurrentCurrency())) }}</td>
                                                         <td>{{ checkNumberFormat($invoiceItem->total, strtoupper(getCurrentCurrency())) }}</td>

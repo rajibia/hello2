@@ -25,7 +25,7 @@
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('code', __('messages.charge.code') . ':', ['class' => 'form-label']) }}
                         <span class="required"></span>
-                        {{ Form::text('code', null, ['class' => 'form-control', 'required', 'id' => 'editCode', 'placeholder' => __('messages.charge.code')]) }}
+                      {{ Form::text('code', null, ['class' => 'form-control', 'required', 'id' => 'editCode', 'readonly' => 'readonly']) }}
                     </div>
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('standard_charge', __('messages.charge.standard_charge') . ':', ['class' => 'form-label']) }}

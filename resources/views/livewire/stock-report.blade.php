@@ -7,70 +7,61 @@
             padding: 0.5rem !important;
         }
     </style>
+
     <div class="mb-5 mb-xl-10">
         <div class="pt-3">
+            <!-- Filters Row -->
             <div class="row mb-5">
                 <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="d-flex">
-                        <div class="input-group me-2 mb-3" style="max-width: 250px;">
-                            <span class="input-group-text bg-primary">
-                                <i class="fas fa-layer-group text-white"></i>
-                            </span>
-                            <select class="form-select" wire:model="categoryFilter">
-                                @foreach($categories as $id => $name)
-                                    <option value="{{ $id }}">{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="input-group me-2 mb-3" style="max-width: 250px;">
+                        <span class="input-group-text bg-primary">
+                            <i class="fas fa-layer-group text-white"></i>
+                        </span>
+                        <select class="form-select" wire:model="categoryFilter">
+                            @foreach($categories as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
-
                 <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="d-flex">
-                        <div class="input-group me-2 mb-3" style="max-width: 250px;">
-                            <span class="input-group-text bg-primary">
-                                <i class="fas fa-copyright text-white"></i>
-                            </span>
-                            <select class="form-select" wire:model="brandFilter">
-                                @foreach($brands as $id => $name)
-                                    <option value="{{ $id }}">{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="input-group me-2 mb-3" style="max-width: 250px;">
+                        <span class="input-group-text bg-primary">
+                            <i class="fas fa-copyright text-white"></i>
+                        </span>
+                        <select class="form-select" wire:model="brandFilter">
+                            @foreach($brands as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
-
                 <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="d-flex">
-                        <div class="input-group me-2 mb-3" style="max-width: 250px;">
-                            <span class="input-group-text bg-primary">
-                                <i class="fas fa-box text-white"></i>
-                            </span>
-                            <select class="form-select" wire:model="stockStatusFilter">
-                                @foreach($stockStatuses as $id => $name)
-                                    <option value="{{ $id }}">{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="input-group me-2 mb-3" style="max-width: 250px;">
+                        <span class="input-group-text bg-primary">
+                            <i class="fas fa-box text-white"></i>
+                        </span>
+                        <select class="form-select" wire:model="stockStatusFilter">
+                            @foreach($stockStatuses as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
-
                 <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="d-flex">
-                        <div class="input-group me-2 mb-3" style="max-width: 250px;">
-                            <span class="input-group-text bg-primary">
-                                <i class="fas fa-calendar-times text-white"></i>
-                            </span>
-                            <select class="form-select" wire:model="expiryFilter">
-                                @foreach($expiryStatuses as $id => $name)
-                                    <option value="{{ $id }}">{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="input-group me-2 mb-3" style="max-width: 250px;">
+                        <span class="input-group-text bg-primary">
+                            <i class="fas fa-calendar-times text-white"></i>
+                        </span>
+                        <select class="form-select" wire:model="expiryFilter">
+                            @foreach($expiryStatuses as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
             </div>
-            
+
             <div class="mb-5">
                 <div class="input-group w-100">
                     <span class="input-group-text bg-primary">
@@ -82,6 +73,19 @@
                         <i class="fas fa-times"></i> Clear Filters
                     </button>
                 </div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="mb-5 text-end">
+                <button id="exportCsv" class="btn btn-success me-2">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button id="exportExcel" class="btn btn-info me-2">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button id="exportPdf" class="btn btn-danger me-2">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
             </div>
 
             <!-- Stock Summary Cards -->
@@ -156,317 +160,211 @@
                 </div>
             </div>
 
-            <!-- Stock Table in Card -->
+            <!-- Stock Table -->
             <div class="card">
                 <div class="card-body pb-3 pt-5">
-                    <div id="stockPrintSection">
-                        <div class="table-responsive">
-                            <table id="stockTable" class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
-                                <thead>
-                                    <tr class="fw-bold text-muted">
-                                        <th class="min-w-150px">{{ __('Medicine Name') }}</th>
-                                        <th class="min-w-100px">{{ __('Category') }}</th>
-                                        <th class="min-w-100px">{{ __('Brand') }}</th>
-                                        <th class="min-w-100px">{{ __('Composition') }}</th>
-                                        <th class="min-w-100px text-end">{{ __('Buying Price') }}</th>
-                                        <th class="min-w-100px text-end">{{ __('Selling Price') }}</th>
-                                        <th class="min-w-80px text-center">{{ __('Dispensary') }}</th>
-                                        <th class="min-w-80px text-center">{{ __('Store') }}</th>
-                                        <th class="min-w-80px text-center">{{ __('Available') }}</th>
-                                        <th class="min-w-100px">{{ __('Expiry Date') }}</th>
-                                        <th class="min-w-100px">{{ __('Status') }}</th>
-                                        <th class="min-w-100px text-end">{{ __('Value') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($stockItems['data'] as $item)
-                                        <tr>
-                                            <td>{{ $item['name'] }}</td>
-                                            <td>{{ $item['category'] }}</td>
-                                            <td>{{ $item['brand'] }}</td>
-                                            <td>{{ $item['salt_composition'] }}</td>
-                                            <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($item['buying_price'], 2) }}</td>
-                                            <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($item['selling_price'], 2) }}</td>
-                                            <td class="text-center">{{ $item['quantity'] }}</td>
-                                            <td class="text-center">{{ $item['store_quantity'] }}</td>
-                                            <td class="text-center">{{ $item['available_quantity'] }}</td>
-                                            <td>
-                                                {{ $item['expiry_date'] }}
-                                                @if($item['expiry_date'] !== 'N/A')
-                                                    @if($item['expiry_status'] === 'Expired')
-                                                        <span class="badge bg-light-danger">Expired</span>
-                                                    @elseif($item['expiry_status'] === 'Expiring Soon')
-                                                        <span class="badge bg-light-warning">{{ $item['days_until_expiry'] }} days left</span>
-                                                    @endif
+                    <div class="table-responsive">
+                        <table id="stockTable" class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+                            <thead>
+                                <tr class="fw-bold text-muted">
+                                    <th class="min-w-150px">{{ __('Medicine Name') }}</th>
+                                    <th class="min-w-100px">{{ __('Category') }}</th>
+                                    <th class="min-w-100px">{{ __('Brand') }}</th>
+                                    <th class="min-w-100px">{{ __('Composition') }}</th>
+                                    <th class="min-w-100px text-end">{{ __('Buying Price') }}</th>
+                                    <th class="min-w-100px text-end">{{ __('Selling Price') }}</th>
+                                    <th class="min-w-80px text-center">{{ __('Dispensary') }}</th>
+                                    <th class="min-w-80px text-center">{{ __('Store') }}</th>
+                                    <th class="min-w-80px text-center">{{ __('Available') }}</th>
+                                    <th class="min-w-100px">{{ __('Expiry Date') }}</th>
+                                    <th class="min-w-100px">{{ __('Status') }}</th>
+                                    <th class="min-w-100px text-end">{{ __('Value') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($stockItems['data'] as $item)
+                                    <tr>
+                                        <td>{{ $item['name'] }}</td>
+                                        <td>{{ $item['category'] }}</td>
+                                        <td>{{ $item['brand'] }}</td>
+                                        <td>{{ $item['salt_composition'] }}</td>
+                                        <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($item['buying_price'], 2) }}</td>
+                                        <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($item['selling_price'], 2) }}</td>
+                                        <td class="text-center">{{ $item['quantity'] }}</td>
+                                        <td class="text-center">{{ $item['store_quantity'] }}</td>
+                                        <td class="text-center">{{ $item['available_quantity'] }}</td>
+                                        <td>
+                                            {{ $item['expiry_date'] }}
+                                            @if($item['expiry_date'] !== 'N/A')
+                                                @if($item['expiry_status'] === 'Expired')
+                                                    <span class="badge bg-light-danger">Expired</span>
+                                                @elseif($item['expiry_status'] === 'Expiring Soon')
+                                                    <span class="badge bg-light-warning">{{ $item['days_until_expiry'] }} days left</span>
                                                 @endif
-                                            </td>
-                                            <td>
-                                                @php
-                                                    // Determine badge color based on stock status
-                                                    $badgeColor = 'danger';
-                                                    if ($item['stock_status'] === 'In Stock') {
-                                                        $badgeColor = 'success';
-                                                    } elseif ($item['stock_status'] === 'Low Stock') {
-                                                        $badgeColor = 'warning';
-                                                    }
-                                                @endphp
-                                                <span class="badge bg-light-{{ $badgeColor }}">{{ $item['stock_status'] }}</span>
-                                            </td>
-                                            <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($item['total_value'], 2) }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="12" class="text-center">{{ __('No stock items found.') }}</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                                <tfoot>
-                                    <tr class="fw-bold">
-                                        <td colspan="6" class="text-end">{{ __('Totals:') }}</td>
-                                        <td class="text-center">{{ $stockItems['total_quantity'] }}</td>
-                                        <td class="text-center">{{ $stockItems['total_store_quantity'] }}</td>
-                                        <td class="text-center">{{ $stockItems['total_available_quantity'] }}</td>
-                                        <td colspan="2"></td>
-                                        <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($stockItems['total_value'], 2) }}</td>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light-{{ $item['stock_status'] === 'In Stock' ? 'success' : ($item['stock_status'] === 'Low Stock' ? 'warning' : 'danger') }}">
+                                                {{ $item['stock_status'] }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($item['total_value'], 2) }}</td>
                                     </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        @if($stockItems['total'] > 0)
-                            <div class="d-flex justify-content-between align-items-center mt-5">
-                                <div>
-                                    {{ $stockItems['paginator']->onEachSide(1)->links() }}
-                                </div>
-                            </div>
-                        @endif
+                                @empty
+                                    <tr>
+                                        <td colspan="12" class="text-center">{{ __('No stock items found.') }}</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-bold">
+                                    <td colspan="6" class="text-end">{{ __('Totals:') }}</td>
+                                    <td class="text-center">{{ $stockItems['total_quantity'] }}</td>
+                                    <td class="text-center">{{ $stockItems['total_store_quantity'] }}</td>
+                                    <td class="text-center">{{ $stockItems['total_available_quantity'] }}</td>
+                                    <td colspan="2"></td>
+                                    <td class="text-end">{{ getCurrencySymbol() }} {{ number_format($stockItems['total_value'], 2) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
+
+                    @if($stockItems['total'] > 0)
+                        <div class="d-flex justify-content-between align-items-center mt-5">
+                            <div>
+                                {{ $stockItems['paginator']->onEachSide(1)->links() }}
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Print Section (Hidden) -->
-<div class="d-none" id="stockPrintSection">
-    <!-- This section will be populated dynamically by JavaScript -->
-</div>
-
-<script>
-    document.addEventListener('livewire:load', function () {
-        // Any initialization code if needed
-    });
-</script>
+<!-- Required Libraries (Add to your layout or here) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 @section('page_scripts')
-    <script>
-        $(document).ready(function() {
-            $('#printReport').click(function() {
-                console.log('Print button clicked');
-                
-                // Create a new window for printing
-                let printWindow = window.open('', '_blank');
-                
-                try {
-                    // Get the table HTML
-                    let tableHTML = '';
-                    let tableFound = false;
-                    
-                    // Try to get the table content
-                    const visibleTable = document.querySelector('#stockTable');
-                    if (visibleTable) {
-                        tableHTML = visibleTable.outerHTML;
-                        tableFound = true;
-                        console.log('Table found in visible section');
-                    }
-                    
-                    if (!tableFound) {
-                        console.error('Table not found');
-                        alert('Error: Could not find report table to print.');
-                        printWindow.close();
-                        return;
-                    }
-                    
-                    // Process the table HTML to remove icons and simplify it
-                    if (tableFound) {
-                        // Create a temporary div to manipulate the HTML
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = tableHTML;
-                        
-                        // Remove all icons, images, and unnecessary elements
-                        const icons = tempDiv.querySelectorAll('i, svg, img, .avatar-circle, .avatar, .icon');
-                        icons.forEach(icon => icon.remove());
-                        
-                        // Remove any action buttons or links that shouldn't be printed
-                        const actionButtons = tempDiv.querySelectorAll('.action-btn, .btn, button');
-                        actionButtons.forEach(btn => btn.remove());
-                        
-                        // Get the simplified table HTML
-                        tableHTML = tempDiv.innerHTML;
-                    }
-                    
-                    // Create the print content
-                    printWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Stock Report</title>
-                            <style>
-                                body { 
-                                    font-family: Arial, sans-serif; 
-                                    padding: 30px; 
-                                    max-width: 1000px; 
-                                    margin: 0 auto;
-                                }
-                                .print-header { 
-                                    text-align: center; 
-                                    margin-bottom: 30px; 
-                                }
-                                .print-header h1 { 
-                                    font-size: 24px; 
-                                    font-weight: bold; 
-                                    margin-bottom: 5px; 
-                                }
-                                .print-header p { 
-                                    font-size: 14px; 
-                                    color: #555; 
-                                    margin-bottom: 5px; 
-                                }
-                                table {
-                                    width: 100%;
-                                    border-collapse: collapse;
-                                    margin-top: 20px;
-                                    margin-bottom: 30px;
-                                }
-                                th, td {
-                                    border: 1px solid #ddd;
-                                    padding: 10px;
-                                    text-align: left;
-                                    font-size: 12px;
-                                }
-                                th {
-                                    background-color: #f2f2f2;
-                                    font-weight: bold;
-                                }
-                                /* Convert badges to simple text */
-                                .badge {
-                                    display: inline;
-                                    padding: 0;
-                                    font-size: inherit;
-                                    font-weight: normal;
-                                    line-height: inherit;
-                                    text-align: inherit;
-                                    white-space: inherit;
-                                    vertical-align: inherit;
-                                    border-radius: 0;
-                                    background-color: transparent !important;
-                                }
-                                /* Reset all badge colors to default text color */
-                                .bg-light-success, .bg-light-danger, .bg-light-primary, .bg-light-warning,
-                                .bg-success, .bg-danger, .bg-primary, .bg-warning,
-                                .text-success, .text-danger, .text-primary, .text-warning {
-                                    color: inherit !important;
-                                    background-color: transparent !important;
-                                }
-                                /* Hide unnecessary elements */
-                                .avatar-circle, .avatar, .icon, svg, i, img, .action-btn {
-                                    display: none !important;
-                                }
-                                /* Remove link styling */
-                                a {
-                                    text-decoration: none;
-                                    color: inherit;
-                                }
-                                /* Print buttons */
-                                .no-print {
-                                    text-align: center;
-                                    margin-top: 30px;
-                                    margin-bottom: 20px;
-                                }
-                                /* Reset button styles for print buttons */
-                                .no-print .btn {
-                                    display: inline-block !important;
-                                    font-weight: 500 !important;
-                                    text-align: center !important;
-                                    vertical-align: middle !important;
-                                    user-select: none !important;
-                                    padding: 0.65rem 1rem !important;
-                                    font-size: 1rem !important;
-                                    line-height: 1.5 !important;
-                                    border-radius: 0.42rem !important;
-                                    cursor: pointer !important;
-                                    margin: 0 5px !important;
-                                }
-                                .no-print .btn-primary {
-                                    color: #fff !important;
-                                    background-color: #3699FF !important;
-                                    border: 1px solid #3699FF !important;
-                                }
-                                .no-print .btn-secondary {
-                                    color: #3F4254 !important;
-                                    background-color: #E4E6EF !important;
-                                    border: 1px solid #E4E6EF !important;
-                                }
-                                .print-footer { 
-                                    text-align: center; 
-                                    margin-top: 30px; 
-                                    font-size: 12px; 
-                                    color: #777; 
-                                    padding-bottom: 20px;
-                                }
-                                @media print {
-                                    body { 
-                                        padding: 15px; 
-                                        margin: 0 auto;
-                                    }
-                                    .no-print {
-                                        display: none !important;
-                                    }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="print-header">
-                                <h1>{{env('APP_NAME')}}</h1>
-                                <h2>Inventory Stock Report</h2>
-                                <p>Generated on: ${new Date().toLocaleString()}</p>
-                            </div>
-                            
-                            <div id="print-content">
-                                ${tableFound ? tableHTML : `<p>No stock items found</p>`}
-                            </div>
-                            
-                            <div class="print-footer">
-                                <p>© ${new Date().getFullYear()} Hospital Management System</p>
-                            </div>
-                            
-                            <div class="text-center mt-4 no-print">
-                                <button type="button" class="btn btn-primary btn-print" onclick="window.print();" style="display: inline-block !important;">
-                                    Print Now
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-close" onclick="window.close();" style="display: inline-block !important;">
-                                    Close
-                                </button>
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    
-                    // Finish and print
-                    printWindow.document.close();
-                    printWindow.focus();
-                    
-                     // Add a small delay before printing to ensure content is fully loaded
-                     setTimeout(function() {
-                        printWindow.print();
-                    }, 500);
-                    
-                } catch (error) {
-                    console.error('Error preparing print content:', error);
-                    printWindow.close();
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const { jsPDF } = window.jspdf;
+
+    // Helper to get clean text from cell (remove badges, icons)
+    function getCellText(cell) {
+        const temp = document.createElement('div');
+        temp.innerHTML = cell.innerHTML;
+        temp.querySelectorAll('.badge, i, svg, img').forEach(el => el.remove());
+        return temp.textContent || temp.innerText || '';
+    }
+
+    // Get table data
+    function getTableData() {
+        const table = document.getElementById('stockTable');
+        const rows = table.querySelectorAll('tr');
+        const data = [];
+
+        rows.forEach((row, index) => {
+            const cells = row.querySelectorAll('th, td');
+            if (cells.length === 0) return;
+
+            const rowData = Array.from(cells).map(cell => getCellText(cell).trim());
+            if (index === 0) {
+                // Header
+                data.push(rowData);
+            } else if (row.closest('tfoot')) {
+                // Skip tfoot or include only total row if needed
+                if (row.querySelector('td') && row.querySelector('td').textContent.includes('Totals:')) {
+                    data.push(rowData);
                 }
-            });
+            } else {
+                data.push(rowData);
+            }
         });
-    </script>
+
+        return data;
+    }
+
+    // Export CSV
+    document.getElementById('exportCsv').addEventListener('click', () => {
+        const data = getTableData();
+        let csv = data.map(row => row.join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Stock_Report_' + new Date().toISOString().slice(0,10) + '.csv';
+        link.click();
+    });
+
+    // Export Excel
+    document.getElementById('exportExcel').addEventListener('click', () => {
+        const data = getTableData();
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Stock Report");
+        XLSX.writeFile(wb, 'Stock_Report_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    });
+
+    // Export PDF
+    document.getElementById('exportPdf').addEventListener('click', () => {
+        const doc = new jsPDF('l', 'mm', 'a4'); // landscape
+        doc.setFontSize(16);
+        doc.text("Inventory Stock Report", 14, 15);
+        doc.setFontSize(10);
+        doc.text("Generated on: " + new Date().toLocaleString(), 14, 22);
+
+        const tableData = getTableData().map(row => row.map(cell => cell.replace(/,/g, ' ')));
+
+        doc.autoTable({
+            head: [tableData[0]],
+            body: tableData.slice(1),
+            startY: 30,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [54, 96, 146] },
+            columnStyles: {
+                4: { halign: 'right' },  // Buying Price
+                5: { halign: 'right' },  // Selling Price
+                11: { halign: 'right' }  // Value
+            }
+        });
+
+        doc.save('Stock_Report_' + new Date().toISOString().slice(0,10) + '.pdf');
+    });
+
+    // Print Functionality (already improved)
+    document.getElementById('printReport').addEventListener('click', function () {
+        let printWindow = window.open('', '_blank');
+        const table = document.getElementById('stockTable').outerHTML;
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Stock Report - {{ env('APP_NAME') }}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 12px; }
+                    th { background-color: #f0f0f0; }
+                    .badge { background: none !important; color: black !important; font-weight: normal; }
+                    h1, h2 { text-align: center; }
+                    @media print { body { padding: 10px; } }
+                </style>
+            </head>
+            <body>
+                <h1>{{ env('APP_NAME') }}</h1>
+                <h2>Inventory Stock Report</h2>
+                <p style="text-align:center;">Generated on: ${new Date().toLocaleString()}</p>
+                ${table}
+                <script>window.print();<\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    });
+});
+</script>
 @endsection

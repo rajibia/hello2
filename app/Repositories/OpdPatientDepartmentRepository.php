@@ -12,6 +12,7 @@ use App\Models\PatientCase;
 use App\Models\OpdTimeline;
 use Exception;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Carbon\Carbon; // Ensure Carbon is available if you need it for future repository changes
 
 /**
  * Class OpdPatientDepartmentRepository
@@ -46,23 +47,10 @@ class OpdPatientDepartmentRepository extends BaseRepository
         return OpdPatientDepartment::class;
     }
 
-    // public function getAssociatedData()
-    // {
-    //     $data['patients'] = Patient::with('patientUser')->get()->where('patientUser.status', '=', 1)->pluck('patientUser.full_name',
-    //         'id')->sort();
-    //     $data['doctors'] = Doctor::with('doctorUser')->get()->where('doctorUser.status', '=', 1)->pluck('doctorUser.full_name',
-    //         'id')->sort();
-    //     $data['charges'] = Charge::with('chargeCategory')->where('charge_type', 8)->get()->pluck('chargeCategory.name', 'id')->sort();
-    //     $data['opdNumber'] = $this->model->generateUniqueOpdNumber();
-    //     $data['paymentMode'] = $this->model::PAYMENT_MODES;
-
-    //     return $data;
-    // }
-
-     public function getAssociatedData($selectedPatientId = null)
+    public function getAssociatedData($selectedPatientId = null)
     {
         // Retrieve patients with their associated user (for gender)
-        $data['patients'] = Patient::with('patientUser') // Assuming `patientUser` is the relation in Patient model for User
+        $data['patients'] = Patient::with('patientUser') 
             ->whereHas('patientUser', function ($query) {
                 $query->where('status', 1);
             })
@@ -124,13 +112,6 @@ class OpdPatientDepartmentRepository extends BaseRepository
         return OpdTimeline::where('opd_patient_department_id', $id)->latest()->take(2)->visible()->get();
     }
 
-    // public function getConsultantDoctor($id)
-    // {
-    //     $consultantRegister = OpdConsultantRegister::whereHas('doctor.doctorUser')->with('doctor.doctorUser')->where('opd_patient_department_id', $id)->groupBy('doctor_id')->latest()->take(5)->get();
-
-    //     return $consultantRegister;
-    // }
-
     public function getDoctorsData()
     {
         return Doctor::with('doctorUser')->get()->where('doctorUser.status', '=', 1)->pluck('doctorUser.full_name', 'id');
@@ -152,18 +133,9 @@ class OpdPatientDepartmentRepository extends BaseRepository
         return $doctors;
     }
 
-    public function store($input)
-    {
-        try {
-            $input['is_old_patient'] = isset($input['is_old_patient']) ? true : false;
-            OpdPatientDepartment::create($input);
-        } catch (Exception $e) {
-            throw new UnprocessableEntityHttpException($e->getMessage());
-        }
-
-        return true;
-    }
-
+    // Removed the public function store($input) method since the controller handles creation directly.
+    // If you need the validation, it is now implemented in the controller.
+    
     public function storeWithInvoice($input)
     {
         try {
@@ -199,15 +171,20 @@ class OpdPatientDepartmentRepository extends BaseRepository
     public function createNotification($input)
     {
         try {
+            // Ensure patient and doctor details are retrieved safely
             $patient = Patient::with('patientUser')->where('id', $input['patient_id'])->first();
-            $doctor = Doctor::with('doctorUser')->where('id', $input['doctor_id'])->first()->doctorUser->fullname;
+            
+            // Added check for doctor existence before accessing properties
+            $doctorData = Doctor::with('doctorUser')->where('id', $input['doctor_id'])->first();
+            $doctorName = $doctorData ? $doctorData->doctorUser->full_name : 'a doctor';
 
             if (isset($input['revisit'])) {
-                $title = ($patient->patientUser->full_name ?? '').' you are visited doctor '.$doctor.'.';
+                $title = ($patient->patientUser->full_name ?? 'Patient').' you are visited doctor '.$doctorName.'.';
             } else {
-                $title = ($patient->patientUser->full_name ?? '').' your OPD record has been created.';
+                $title = ($patient->patientUser->full_name ?? 'Patient').' your OPD record has been created.';
             }
 
+            // Assumes addNotification helper function is globally defined and works
             addNotification([
                 Notification::NOTIFICATION_TYPE['OPD Patient'],
                 $patient->user_id ?? null,
@@ -215,6 +192,7 @@ class OpdPatientDepartmentRepository extends BaseRepository
                 $title,
             ]);
         } catch (Exception $e) {
+            // Throwing the exception will help debug the notification ID issue if it persists
             throw new UnprocessableEntityHttpException($e->getMessage());
         }
     }

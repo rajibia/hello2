@@ -1,6 +1,5 @@
 <div id="add_charges_modal" class="modal fade" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <!-- Modal content-->
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="exampleModalLabel">{{ __('messages.charge.new_charge') }}</h3>
@@ -29,7 +28,7 @@
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('code', __('messages.charge.code') . ':', ['class' => 'form-label']) }}
                         <span class="required"></span>
-                        {{ Form::text('code', null, ['class' => 'form-control','required','placeholder'=>__('messages.charge.code')]) }}
+                       {{ Form::text('code', null, ['class' => 'form-control', 'id' => 'code', 'readonly' => 'readonly']) }}
                     </div>
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('standard_charge', __('messages.charge.standard_charge') . ':', ['class' => 'form-label']) }}
@@ -52,3 +51,27 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // When charge type changes
+    $('#chargeTypeId').on('change', function () {
+
+        let selectedText = $("#chargeTypeId option:selected").text().trim();
+
+        if(selectedText === "" || selectedText === null){
+            $('#code').val("");
+            return;
+        }
+
+        // Create code from charge type text
+        let prefix = selectedText.substring(0, 3).toUpperCase(); // first 3 letters
+        let randomNumber = Math.floor(100 + Math.random() * 900); // 3-digit random number
+
+        let finalCode = prefix + "-" + randomNumber;
+
+        $('#code').val(finalCode);
+    });
+
+});
+</script>

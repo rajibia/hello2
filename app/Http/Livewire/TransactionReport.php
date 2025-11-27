@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
+use PDF;
 use Livewire\WithPagination;
 
 class TransactionReport extends Component
@@ -25,7 +26,7 @@ class TransactionReport extends Component
     public $perPage = 10;
     protected $paginationTheme = 'bootstrap';
 
-    protected $listeners = ['refresh' => '$refresh', 'print-transaction-report' => 'printReport'];
+    protected $listeners = ['refresh' => '$refresh', 'print-transaction-report' => 'printReport', 'exportTransactionPDF' => 'exportToPDF'];
 
     public function mount()
     {
@@ -237,6 +238,87 @@ class TransactionReport extends Component
     public function printReport()
     {
         $this->emit('print-transaction-report');
+    }
+
+    public function exportToCSV()
+    {
+        $transactionData = $this->getTransactions();
+        $transactions = $transactionData['transactions'];
+        
+        $csv = fopen('php://memory', 'w');
+        fputcsv($csv, ['Transaction ID', 'Date', 'Patient', 'Type', 'Payment Method', 'Status', 'Amount']);
+
+        foreach ($transactions as $transaction) {
+            fputcsv($csv, [
+                $transaction['transaction_id'],
+                $transaction['date']->format('M d, Y'),
+                $transaction['user']['name'] ?? 'N/A',
+                $transaction['type'],
+                $transaction['payment_type'],
+                $transaction['status'],
+                $transaction['amount']
+            ]);
+        }
+
+        rewind($csv);
+        $content = stream_get_contents($csv);
+        fclose($csv);
+
+        $this->dispatchBrowserEvent('download-file', [
+            'filename' => 'transaction-report-' . now()->format('Y-m-d_H-i-s') . '.csv',
+            'data' => base64_encode($content),
+            'type' => 'text/csv',
+        ]);
+    }
+
+    public function exportToExcel()
+    {
+        $transactionData = $this->getTransactions();
+        $transactions = $transactionData['transactions'];
+        
+        // Create simple Excel-compatible CSV (TSV format works well with Excel)
+        $excel = "Transaction ID\tDate\tPatient\tType\tPayment Method\tStatus\tAmount\n";
+
+        foreach ($transactions as $transaction) {
+            $excel .= $transaction['transaction_id'] . "\t";
+            $excel .= $transaction['date']->format('M d, Y') . "\t";
+            $excel .= ($transaction['user']['name'] ?? 'N/A') . "\t";
+            $excel .= $transaction['type'] . "\t";
+            $excel .= $transaction['payment_type'] . "\t";
+            $excel .= $transaction['status'] . "\t";
+            $excel .= $transaction['amount'] . "\n";
+        }
+
+        $this->dispatchBrowserEvent('download-file', [
+            'filename' => 'transaction-report-' . now()->format('Y-m-d_H-i-s') . '.xlsx',
+            'data' => base64_encode($excel),
+            'type' => 'application/vnd.ms-excel',
+        ]);
+    }
+
+    #[\Livewire\Attributes\On('exportTransactionPDF')]
+    public function exportToPDF()
+    {
+        try {
+            $transactionData = $this->getTransactions();
+            $transactions = $transactionData['transactions'];
+            $totalAmount = $transactionData['totalAmount'];
+            $startDate = Carbon::parse($this->startDate);
+            $endDate = Carbon::parse($this->endDate);
+            
+            $html = view('livewire.transaction-report-pdf', compact('transactions', 'startDate', 'endDate', 'totalAmount'))->render();
+            $pdf = PDF::loadHTML($html);
+            $output = $pdf->output();
+
+            $this->dispatchBrowserEvent('download-file', [
+                'filename' => 'transaction-report-' . now()->format('Y-m-d_H-i-s') . '.pdf',
+                'data' => base64_encode($output),
+                'type' => 'application/pdf',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('PDF Export Error: ' . $e->getMessage());
+            $this->dispatchBrowserEvent('export-error', ['message' => 'Could not generate PDF.']);
+        }
     }
 
     public function render()

@@ -89,7 +89,6 @@
             </div>
         </div>
         
-        <!-- Medicine Adjustment Report Table in Card -->
         <div class="card">
             <div class="card-header border-0 pt-6">
                 <h3 class="card-title align-items-start flex-column">

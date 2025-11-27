@@ -62,6 +62,17 @@
                     <button id="printReport" class="btn btn-primary me-2">
                         <i class="fas fa-print"></i> {{ __('messages.common.print') }}
                     </button>
+                    <button id="exportCSV" class="btn btn-success me-2">
+    <i class="fas fa-file-csv"></i> CSV
+</button>
+
+<button id="exportExcel" class="btn btn-success me-2">
+    <i class="fas fa-file-excel"></i> Excel
+</button>
+
+<button id="exportPDF" class="btn btn-danger me-2">
+    <i class="fas fa-file-pdf"></i> PDF
+</button>
                     <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
                         <i class="fas fa-arrow-left"></i> {{ __('Back to Reports') }}
                     </a>
@@ -313,6 +324,80 @@
                 printWindow.close();
             }
         });
+    });
+
+    function getTableElement() {
+        return document.querySelector("#medicineTransferReportTable table");
+    }
+
+    function getTableData() {
+        const table = getTableElement();
+        if (!table) {
+            alert("No table found.");
+            return null;
+        }
+
+        let data = [];
+        table.querySelectorAll("tr").forEach(row => {
+            let rowData = [];
+            row.querySelectorAll("th, td").forEach(cell => {
+                rowData.push(cell.innerText.trim());
+            });
+            data.push(rowData);
+        });
+
+        return data;
+    }
+
+    // CSV
+    document.getElementById("exportCSV").addEventListener("click", function() {
+        let data = getTableData();
+        if (!data) return;
+
+        let csv = data.map(r => r.join(",")).join("\n");
+        let blob = new Blob([csv], { type: "text/csv" });
+
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "medicine_transfer_report.csv";
+        link.click();
+    });
+
+    // EXCEL
+    document.getElementById("exportExcel").addEventListener("click", function() {
+        let table = getTableElement();
+        if (!table) return;
+
+        let blob = new Blob([table.outerHTML], {
+            type: "application/vnd.ms-excel"
+        });
+
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "medicine_transfer_report.xls";
+        link.click();
+    });
+
+    // PDF (browser print-based)
+    document.getElementById("exportPDF").addEventListener("click", function() {
+        let table = getTableElement();
+        if (!table) return;
+
+        let printWindow = window.open("", "_blank");
+        
+        printWindow.document.write(`
+            <html><head><title>Export PDF</title></head>
+            <body>
+                <h2 style="text-align:center;">Medicine Transfer Report</h2>
+                ${table.outerHTML}
+                <script>
+                    window.print();
+                    window.onafterprint = () => window.close();
+                <\/script>
+            </body></html>
+        `);
+
+        printWindow.document.close();
     });
 </script>
 @endsection

@@ -1,249 +1,246 @@
 @extends('layouts.app')
 
-@section('title')
-    IPD Balance Report
+@section('title', 'IPD Balance Report')
+
+@section('page_css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.bootstrap5.min.css">
+
+    <style>
+        @media print {
+            .no-print, .btn-group, #liveSearch,
+            .dataTables_wrapper .dataTables_filter,
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_paginate { display: none !important; }
+
+            body { padding: 30px; font-size: 12px; }
+            .actions-column, i, svg, img, button, .btn, .avatar, .badge { display: none !important; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+            th { background: #f0f0f0; font-weight: bold; }
+        }
+    </style>
 @endsection
 
 @section('content')
-    <div class="container-fluid">
-        <div class="d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-center mb-5">
-                <h1>IPD Balance Report</h1>
-                <div class="d-flex align-items-center">
-                    <button id="printReport" class="btn btn-primary me-2">
-                        <i class="fas fa-print"></i> {{ __('Print Report') }}
-                    </button>
-                    <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-left"></i> {{ __('Back to Reports') }}
-                    </a>
-                </div>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h1 class="mb-0">IPD Balance Report</h1>
+        <div class="d-flex align-items-center gap-2">
+            <!-- Export Buttons -->
+            <div class="btn-group me-2" role="group">
+                <button id="exportPdf" class="btn btn-danger btn-sm">
+                    PDF
+                </button>
+                <button id="exportExcel" class="btn btn-success btn-sm">
+                    Excel
+                </button>
+                <button id="exportCsv" class="btn btn-info btn-sm">
+                    CSV
+                </button>
             </div>
-            
-            @livewire('ipd-balance-report')
+
+            <button id="printReport" class="btn btn-primary">
+                Print
+            </button>
+
+            <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
+                Back
+            </a>
         </div>
     </div>
+
+    <!-- Live Search -->
+    <div class="mb-5">
+        <label for="liveSearch" class="form-label fw-bold">Live Search</label>
+        <input type="text" id="liveSearch" class="form-control form-control-lg"
+               placeholder="Search patients, IPD number, balance..." autofocus>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="ipdBalanceWrapper">
+                @livewire('ipd-balance-report')
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('page_scripts')
-    <script>
-        $(document).ready(function() {
-            $('#printReport').click(function() {
-                console.log('Print button clicked');
-                
-                // Create a new window for printing
-                let printWindow = window.open('', '_blank');
-                
-                // Get the date range from the report
-                let dateRange = $('.date-range-display').text().trim();
-                dateRange = dateRange.replace(/\s+/g, ' ').trim(); // Clean up whitespace
-                console.log('Date range:', dateRange);
-                
-                try {
-                    // Get the table HTML
-                    let tableHTML = '';
-                    let tableFound = false;
-                    
-                    // Try to get the table content
-                    const visibleTable = document.querySelector('.table-responsive table');
-                    if (visibleTable) {
-                        tableHTML = visibleTable.outerHTML;
-                        tableFound = true;
-                        console.log('Table found in visible section');
-                    }
-                    
-                    if (!tableFound) {
-                        console.error('Table not found');
-                        alert('Error: Could not find report table to print.');
-                        printWindow.close();
-                        return;
-                    }
-                    
-                    // Process the table HTML to remove icons and simplify it
-                    if (tableFound) {
-                        // Create a temporary div to manipulate the HTML
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = tableHTML;
-                        
-                        // Remove all icons, images, and unnecessary elements
-                        const icons = tempDiv.querySelectorAll('i, svg, img, .avatar-circle, .avatar, .icon, .image');
-                        icons.forEach(icon => icon.remove());
-                        
-                        // Remove any action buttons or links that shouldn't be printed
-                        const actionButtons = tempDiv.querySelectorAll('.action-btn, .btn, button');
-                        actionButtons.forEach(btn => btn.remove());
-                        
-                        // Convert all links to plain text
-                        const links = tempDiv.querySelectorAll('a');
-                        links.forEach(link => {
-                            const textNode = document.createTextNode(link.textContent.trim());
-                            link.parentNode.replaceChild(textNode, link);
-                        });
-                        
-                        // Get the simplified table HTML
-                        tableHTML = tempDiv.innerHTML;
-                    }
-                    
-                    // Create the print content
-                    printWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>IPD Balance Report</title>
-                            <style>
-                                body { 
-                                    font-family: Arial, sans-serif; 
-                                    padding: 30px; 
-                                    max-width: 1000px; 
-                                    margin: 0 auto;
-                                }
-                                .print-header { 
-                                    text-align: center; 
-                                    margin-bottom: 30px; 
-                                }
-                                .print-header h1 { 
-                                    font-size: 24px; 
-                                    font-weight: bold; 
-                                    margin-bottom: 5px; 
-                                }
-                                .print-header p { 
-                                    font-size: 14px; 
-                                    color: #555; 
-                                    margin-bottom: 5px; 
-                                }
-                                table {
-                                    width: 100%;
-                                    border-collapse: collapse;
-                                    margin-top: 20px;
-                                    margin-bottom: 30px;
-                                }
-                                th, td {
-                                    border: 1px solid #ddd;
-                                    padding: 10px;
-                                    text-align: left;
-                                    font-size: 12px;
-                                }
-                                th {
-                                    background-color: #f2f2f2;
-                                    font-weight: bold;
-                                }
-                                /* Convert badges to simple text */
-                                .badge {
-                                    display: inline;
-                                    padding: 0;
-                                    font-size: inherit;
-                                    font-weight: normal;
-                                    line-height: inherit;
-                                    text-align: inherit;
-                                    white-space: inherit;
-                                    vertical-align: inherit;
-                                    border-radius: 0;
-                                    background-color: transparent !important;
-                                }
-                                /* Reset all badge colors to default text color */
-                                .bg-light-success, .bg-light-danger, .bg-light-primary, .bg-light-warning,
-                                .bg-success, .bg-danger, .bg-primary, .bg-warning,
-                                .text-success, .text-danger, .text-primary, .text-warning {
-                                    color: inherit !important;
-                                    background-color: transparent !important;
-                                }
-                                /* Hide unnecessary elements */
-                                .avatar-circle, .avatar, .icon, svg, i, img, .action-btn {
-                                    display: none !important;
-                                }
-                                /* Remove link styling */
-                                a {
-                                    text-decoration: none;
-                                    color: inherit;
-                                }
-                                /* Print buttons */
-                                .no-print {
-                                    text-align: center;
-                                    margin-top: 30px;
-                                    margin-bottom: 20px;
-                                }
-                                /* Reset button styles for print buttons */
-                                .no-print .btn {
-                                    display: inline-block !important;
-                                    font-weight: 500 !important;
-                                    text-align: center !important;
-                                    vertical-align: middle !important;
-                                    user-select: none !important;
-                                    padding: 0.65rem 1rem !important;
-                                    font-size: 1rem !important;
-                                    line-height: 1.5 !important;
-                                    border-radius: 0.42rem !important;
-                                    cursor: pointer !important;
-                                    margin: 0 5px !important;
-                                }
-                                .no-print .btn-primary {
-                                    color: #fff !important;
-                                    background-color: #3699FF !important;
-                                    border: 1px solid #3699FF !important;
-                                }
-                                .no-print .btn-secondary {
-                                    color: #3F4254 !important;
-                                    background-color: #E4E6EF !important;
-                                    border: 1px solid #E4E6EF !important;
-                                }
-                                .print-footer { 
-                                    text-align: center; 
-                                    margin-top: 30px; 
-                                    font-size: 12px; 
-                                    color: #777; 
-                                    padding-bottom: 20px;
-                                }
-                                @media print {
-                                    body { 
-                                        padding: 15px; 
-                                        margin: 0 auto;
-                                    }
-                                    .no-print {
-                                        display: none !important;
-                                    }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="print-header">
-                                <h1>{{env('APP_NAME')}}</h1>
-                                <h2>IPD Balance Report</h2>
-                                <p>${dateRange}</p>
-                                <p>Generated on: {{ \Carbon\Carbon::now()->format('M d, Y h:i A') }}</p>
-                            </div>
-                            
-                            ${tableHTML}
-                            
-                            <div class="print-footer">
-                                <p>&copy; {{ date('Y') }} All Rights Reserved</p>
-                            </div>
-                            
-                            <div class="text-center mt-4 no-print">
-                                <button type="button" class="btn btn-primary btn-print" onclick="window.print();" style="display: inline-block !important;">
-                                    Print Now
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-close" onclick="window.close();" style="display: inline-block !important;">
-                                    Close
-                                </button>
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    
-                    // Finish and print
-                    printWindow.document.close();
-                    printWindow.focus();
-                    
-                    // Add a small delay before printing to ensure content is fully loaded
-                    setTimeout(function() {
-                        printWindow.print();
-                    }, 1000);
+<!-- Libraries -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
 
-                } catch (error) {
-                    console.error('Error preparing print view:', error);
-                    alert('An error occurred while preparing the print view.');
-                    printWindow.close();
+<script>
+let ipdTable = null;
+let initAttempts = 0;
+
+function initDataTable() {
+    const tableEl = document.querySelector('#ipdBalanceWrapper table.table') ||
+                    document.querySelector('#ipdBalanceWrapper .table-responsive table') ||
+                    document.querySelector('#ipdBalanceWrapper table');
+
+    if (!tableEl) {
+        if (initAttempts++ < 20) setTimeout(initDataTable, 400);
+        return;
+    }
+
+    // Wait for real data
+    const rows = tableEl.querySelectorAll('tbody tr');
+    if (rows.length === 0 || rows[0].children.length < 4) {
+        if (initAttempts++ < 20) setTimeout(initDataTable, 400);
+        return;
+    }
+
+    // Destroy previous instance
+    if ($.fn.DataTable.isDataTable(tableEl)) {
+        $(tableEl).DataTable().destroy();
+    }
+
+    ipdTable = $(tableEl).DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'excelHtml5',
+                text: 'Excel',
+                title: 'IPD Balance Report',
+                className: 'btn btn-success btn-sm',
+                exportOptions: { columns: ':not(:last-child)' }
+            },
+            {
+                extend: 'csvHtml5',
+                text: 'CSV',
+                title: 'IPD Balance Report',
+                className: 'btn btn-info btn-sm',
+                exportOptions: { columns: ':not(:last-child)' }
+            },
+            {
+                extend: 'pdfHtml5',
+                text: 'PDF',
+                title: 'IPD Balance Report',
+                className: 'btn btn-danger btn-sm',
+                orientation: 'landscape',
+                pageSize: 'A4',
+                exportOptions: { columns: ':not(:last-child)' },
+                customize: function (doc) {
+                    doc.pageMargins = [20, 20, 20, 20];
+                    doc.defaultStyle.fontSize = 9;
+                    doc.styles.tableHeader.fontSize = 10;
+                    doc.styles.title = { fontSize: 16, bold: true, alignment: 'center' };
                 }
-            });
-        });
-    </script>
+            }
+        ],
+        pageLength: 25,
+        order: [[0, 'desc']],
+        columnDefs: [
+            { targets: '_all', defaultContent: '' },
+            { targets: -1, orderable: false, searchable: false, className: 'actions-column' }
+        ],
+        searching: true,
+        paging: true,
+        info: true,
+        responsive: true,
+        destroy: true
+    });
+
+    // Connect visible buttons
+    $('#exportExcel').off('click').on('click', () => ipdTable.button('.buttons-excel').trigger());
+    $('#exportCsv').off('click').on('click', () => ipdTable.button('.buttons-csv').trigger());
+    $('#exportPdf').off('click').on('click', () => ipdTable.button('.buttons-pdf').trigger());
+
+    // Live Search
+    $('#liveSearch').off('input').on('input', function () {
+        ipdTable.search(this.value).draw();
+    });
+
+    console.log('IPD Balance DataTable initialized successfully');
+}
+
+// Initialize on load & Livewire updates
+document.addEventListener('DOMContentLoaded', initDataTable);
+document.addEventListener('livewire:update', () => {
+    initAttempts = 0;
+    if (ipdTable) {
+        ipdTable.destroy();
+        ipdTable = null;
+    }
+    setTimeout(initDataTable, 600);
+});
+
+// Print Report - Beautiful & Clean
+$('#printReport').on('click', function () {
+    const dateRange = $('.date-range-display').text().trim() || 'All Time';
+    const tableEl = document.querySelector('#ipdBalanceWrapper table') ||
+                    document.querySelector('#ipdBalanceWrapper .table-responsive table');
+
+    if (!tableEl) {
+        alert('No data to print');
+        return;
+    }
+
+    const tempTable = tableEl.cloneNode(true);
+
+    // Remove Actions column (last column)
+    tempTable.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+
+    // Clean icons, buttons, images
+    tempTable.querySelectorAll('i, svg, img, button, .btn, .avatar, .badge, .action-btn').forEach(el => el.remove());
+
+    // Convert links to text
+    tempTable.querySelectorAll('a').forEach(a => {
+        const text = document.createTextNode(a.textContent.trim());
+        a.parentNode.replaceChild(text, a);
+    });
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>IPD Balance Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; margin: 0; }
+                .header { text-align: center; margin-bottom: 30px; }
+                h1 { font-size: 26px; margin: 0; color: #333; }
+                h2 { font-size: 20px; margin: 10px 0; color: #555; }
+                .info { font-size: 14px; color: #666; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+                th { background: #f0f0f0; font-weight: bold; }
+                tr:nth-child(even) { background: #f9f9f9; }
+                .footer { text-align: center; margin-top: 50px; color: #777; font-size: 12px; }
+                @page { margin: 1cm; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>{{ env('APP_NAME') }}</h1>
+                <h2>IPD Balance Report</h2>
+                <p class="info"><strong>Period:</strong> ${dateRange}</p>
+                <p class="info"><strong>Generated on:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+
+            ${tempTable.outerHTML}
+
+            <div class="footer">
+                <p>© {{ date('Y') }} Hospital Management System. All Rights Reserved.</p>
+            </div>
+        </body>
+        </html>
+    `);
+
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => printWin.print(), 1000);
+});
+</script>
 @endsection

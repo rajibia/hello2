@@ -1,236 +1,219 @@
 @extends('layouts.app')
-@section('title')
-    {{ __('Monthly Outpatient Morbidity Returns') }}
+
+@section('title', __('Monthly Outpatient Morbidity Returns'))
+
+@section('page_css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.bootstrap5.min.css">
+
+    <style>
+        @media print {
+            .no-print, .btn, .btn-group, .dataTables_wrapper .dataTables_filter,
+            .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_paginate { display: none !important; }
+            body { padding: 20px; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; font-size: 11px; }
+            th { background: #f5f5f5; font-weight: bold; }
+            .badge, .fas, .far, .fa, img, button, .svg-icon { display: none !important; }
+        }
+    </style>
 @endsection
+
 @section('content')
-    @include('flash::message')
-    <div class="container-fluid">
-        <div class="d-flex align-items-center justify-content-between mb-5">
-            <h1 class="mb-0">{{ __('Monthly Outpatient Morbidity Returns') }}</h1>
-            <div class="d-flex align-items-center">
-                <button type="button" class="btn btn-primary me-2" id="printReport">
-                    <i class="fas fa-print me-1"></i> {{ __('Print Report') }}
-                </button>
-                <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-left me-1"></i> {{ __('Back to Reports') }}
-                </a>
-            </div>
+@include('flash::message')
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-5">
+        <h1 class="mb-0">{{ __('Monthly Outpatient Morbidity Returns') }}</h1>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary me-2" id="printReport">
+                Print Report
+            </button>
+
+<!-- EXPORT BUTTONS -->
+<button id="exportExcel" class="btn btn-success me-2">
+    Export Excel
+</button>
+
+<button id="exportCsv" class="btn btn-info me-2">
+    Export CSV
+</button>
+
+<button id="exportPdf" class="btn btn-danger me-2">
+    Export PDF
+</button>
+
+            <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
+                Back
+            </a>
         </div>
-        <div class="d-flex flex-column flex-lg-row">
-            <div class="flex-lg-row-fluid mb-10 mb-lg-0">
-                <div class="row">
-                    <div class="col-12">
-                    @livewire('monthly-outpatient-morbidity-report')
-                    </div>
-                </div>
+    </div>
+
+    <div class="mb-5">
+        <input type="text" id="liveSearch" class="form-control form-control-lg"
+               placeholder="Search diseases, cases, age groups instantly..." autofocus>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="morbidityReportWrapper">
+                @livewire('monthly-outpatient-morbidity-report')
             </div>
         </div>
     </div>
+</div>
 @endsection
-@section('page_scripts')
-    <script>
-        document.addEventListener('livewire:load', function() {
-            window.livewire.on('print-morbidity-report', function() {
-                printMorbidityReport();
-            });
-            
-            // Connect the print button to the Livewire event
-            document.getElementById('printReport').addEventListener('click', function() {
-                window.livewire.emit('printReport');
-            });
-            
-            // Category filter code removed as requested
-            
-            function printMorbidityReport() {
-                // Create a new window for printing
-                let printWindow = window.open('', '_blank');
-                
-                // Get the date range from the report
-                let dateRange = $('.date-range-display').text().trim();
-                dateRange = dateRange.replace(/\s+/g, ' ').trim(); // Clean up whitespace
-                
-                try {
-                    // Get the table content
-                    let tableHTML = '';
-                    let tableFound = false;
-                    
-                    // Try different methods to find the table
-                    const printSection = document.getElementById('monthlyMorbidityPrintSection');
-                    if (printSection) {
-                        tableHTML = printSection.innerHTML;
-                        tableFound = true;
-                    } else {
-                        const visibleTable = document.querySelector('table.table-row-dashed');
-                        if (visibleTable) {
-                            tableHTML = visibleTable.outerHTML;
-                            tableFound = true;
-                        } else {
-                            const jqTable = $('table.table-row-dashed');
-                            if (jqTable.length > 0) {
-                                tableHTML = jqTable[0].outerHTML;
-                                tableFound = true;
-                            }
-                        }
-                    }
-                    
-                    // Process the table HTML to remove icons and simplify it
-                    if (tableFound) {
-                        // Create a temporary div to manipulate the HTML
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = tableHTML;
-                        
-                        // Remove all icons, images, and unnecessary elements
-                        tempDiv.querySelectorAll('.fas, .far, .fa, .svg-icon').forEach(el => el.remove());
-                        tempDiv.querySelectorAll('img').forEach(el => el.remove());
-                        tempDiv.querySelectorAll('button').forEach(el => el.remove());
-                        
-                        // Get the simplified table HTML
-                        tableHTML = tempDiv.innerHTML;
-                    }
-                    
-                    // Create the print content with hospital system standard styling
-                    printWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Monthly Outpatient Morbidity Returns</title>
-                            <style>
-                                body { 
-                                    font-family: Arial, sans-serif; 
-                                    padding: 20px; 
-                                    max-width: 1000px; 
-                                    margin: 0 auto; 
-                                }
-                                    /* Print buttons */
-                                .btn-container {
-                                    text-align: center;
-                                    margin-top: 30px;
-                                    margin-bottom: 20px;
-                                }
-                                /* Reset button styles for print buttons */
-                                .btn-container .btn {
-                                    display: inline-block !important;
-                                    font-weight: 500 !important;
-                                    text-align: center !important;
-                                    vertical-align: middle !important;
-                                    user-select: none !important;
-                                    padding: 0.65rem 1rem !important;
-                                    font-size: 1rem !important;
-                                    line-height: 1.5 !important;
-                                    border-radius: 0.42rem !important;
-                                    cursor: pointer !important;
-                                    margin: 0 5px !important;
-                                }
-                                .btn-container .btn-primary {
-                                    color: #fff !important;
-                                    background-color: #3699FF !important;
-                                    border: 1px solid #3699FF !important;
-                                }
-                                .btn-container .btn-secondary {
-                                    color: #3F4254 !important;
-                                    background-color: #E4E6EF !important;
-                                    border: 1px solid #E4E6EF !important;
-                                }
-                                .print-header { 
-                                    text-align: center; 
-                                    margin-bottom: 20px; 
-                                    border-bottom: 1px solid #ddd;
-                                    padding-bottom: 10px;
-                                }
-                                .print-header h1 { 
-                                    font-size: 22px; 
-                                    margin-bottom: 8px; 
-                                }
-                                .print-header p { 
-                                    font-size: 14px; 
-                                    margin: 4px 0; 
-                                    color: #555;
-                                }
-                                table { 
-                                    width: 100%; 
-                                    border-collapse: collapse; 
-                                    margin-bottom: 20px; 
-                                }
-                                th, td { 
-                                    border: 1px solid #ddd; 
-                                    padding: 8px; 
-                                    text-align: left; 
-                                }
-                                th { 
-                                    background-color: #f5f5f5; 
-                                    font-weight: bold; 
-                                }
-                                tr:nth-child(even) { 
-                                    background-color: #f9f9f9; 
-                                }
-                                .badge { 
-                                    padding: 4px 8px; 
-                                    border-radius: 4px; 
-                                    font-size: 12px; 
-                                    font-weight: bold; 
-                                }
-                                a {
-                                    text-decoration: none !important;
-                                    color: inherit !important;
-                                }
-                                .print-footer { 
-                                    text-align: center; 
-                                    margin-top: 20px; 
-                                    font-size: 12px; 
-                                    color: #777; 
-                                    border-top: 1px solid #ddd;
-                                    padding-top: 10px;
-                                }
-                                @media print {
-                                    .btn-container {
-                                        display: none !important;
-                                    }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="print-header">
-                                <h1>{{env('APP_NAME')}}</h1>
-                                <h2>Monthly Outpatient Morbidity Returns</h2>
-                                <p>Period: ${dateRange}</p>
-                                <p>Generated on: ${new Date().toLocaleString()}</p>
-                            </div>
-                            
-                            <div id="print-content">
-                                ${tableFound ? tableHTML : `<p>No morbidity records found</p>`}
-                            </div>
-                            
-                            <div class="print-footer">
-                                <p>  ${new Date().getFullYear()} Hospital Management System</p>
-                            </div>
-                            
-                            <div class="btn-container">
-                                <button type="button" class="btn btn-primary" onclick="window.print();">
-                                    Print Now
-                                </button>
-                                <button type="button" class="btn btn-secondary" onclick="window.close();">
-                                    Close
-                                </button>
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    
-                    // Finish and print
-                    printWindow.document.close();
-                    printWindow.focus();
-                    
-                     // Add a small delay before printing to ensure content is fully loaded
-                     setTimeout(function() {
-                        printWindow.print();
-                    }, 500);
 
-                } catch (e) {
-                    console.error('Error printing report:', e);
-                    alert('Error printing report: ' + e.message);
-                    if (printWindow) printWindow.close();
-                }
+@section('page_scripts')
+<!-- Core Libraries -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+
+<script>
+let morbidityTable = null;
+let initAttempts = 0;
+const maxAttempts = 20;
+
+function safelyInitializeDataTable() {
+    // Find the table
+    const tableEl = document.querySelector('#morbidityReportWrapper table.table-row-dashed') ||
+                    document.querySelector('#morbidityReportWrapper table');
+
+    if (!tableEl) {
+        if (initAttempts++ < maxAttempts) {
+            setTimeout(safelyInitializeDataTable, 400);
+        }
+        return;
+    }
+
+    // Critical: Wait for tbody to have rows AND match thead columns
+    const theadColumns = tableEl.querySelectorAll('thead th').length;
+    const tbodyRows = tableEl.querySelectorAll('tbody tr');
+
+    if (tbodyRows.length === 0 || tbodyRows[0].children.length < theadColumns - 2) {
+        if (initAttempts++ < maxAttempts) {
+            setTimeout(safelyInitializeDataTable, 400);
+            return;
+        }
+    }
+
+    // Destroy if already initialized
+    if ($.fn.DataTable.isDataTable(tableEl)) {
+        $(tableEl).DataTable().destroy();
+    }
+
+    // Safe initialization
+    morbidityTable = $(tableEl).DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'excelHtml5',
+                text: 'Excel',
+                className: 'btn btn-success btn-sm'
+            },
+            {
+                extend: 'csvHtml5',
+                text: 'CSV',
+                className: 'btn btn-info btn-sm'
+            },
+            {
+                extend: 'pdfHtml5',
+                text: 'PDF',
+                className: 'btn btn-danger btn-sm',
+                orientation: 'landscape',
+                pageSize: 'A4',
+                title: 'Monthly Outpatient Morbidity Returns'
             }
-        });
-    </script>
+        ],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100, 'All'],
+        order: [[0, 'asc']],
+        searching: true,
+        paging: true,
+        info: true,
+        autoWidth: false,
+        responsive: true,
+        // This is the KEY fix — prevents "unknown parameter" error
+        columnDefs: [
+            { targets: '_all', defaultContent: '' }
+        ],
+        // Extra safety
+        deferRender: true,
+        destroy: true
+    });
+
+    // Connect export buttons
+    $('#exportExcel').off('click').on('click', () => morbidityTable.button('.buttons-excel').trigger());
+    $('#exportCsv').off('click').on('click', () => morbidityTable.button('.buttons-csv').trigger());
+    $('#exportPdf').off('click').on('click', () => morbidityTable.button('.buttons-pdf').trigger());
+
+    // Live search
+    $('#liveSearch').off('input').on('input', function() {
+        morbidityTable.search(this.value).draw();
+    });
+
+    console.log('DataTable initialized successfully');
+}
+
+// Re-init on every Livewire update
+document.addEventListener('DOMContentLoaded', safelyInitializeDataTable);
+document.addEventListener('livewire:update', () => {
+    initAttempts = 0;
+    if (morbidityTable) {
+        morbidityTable.destroy();
+        morbidityTable = null;
+    }
+    setTimeout(safelyInitializeDataTable, 300);
+});
+
+// Print Report (preserved from your working version)
+document.getElementById('printReport')?.addEventListener('click', () => {
+    window.livewire.emit('printReport');
+});
+
+document.addEventListener('livewire:load', function () {
+    window.livewire.on('print-morbidity-report', () => {
+        const printSection = document.getElementById('monthlyMorbidityPrintSection');
+        const dateRange = $('.date-range-display').text().trim() || 'Current Month';
+        const win = window.open('', '_blank');
+
+        win.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Monthly Outpatient Morbidity Returns</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 30px; }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    h1 { font-size: 24px; margin: 0; }
+                    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
+                    th, td { border: 1px solid #000; padding: 8px; text-align: center; }
+                    th { background: #f0f0f0; }
+                    @page { margin: 1cm; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>{{ env('APP_NAME') }}</h1>
+                    <h2>Monthly Outpatient Morbidity Returns</h2>
+                    <p><strong>Period:</strong> ${dateRange}</p>
+                    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+                ${printSection ? printSection.innerHTML : '<p>No data available</p>'}
+            </body>
+            </html>
+        `);
+        win.document.close();
+        setTimeout(() => win.print(), 800);
+    });
+});
+</script>
 @endsection

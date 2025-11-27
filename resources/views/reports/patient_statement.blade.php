@@ -1,264 +1,196 @@
 @extends('layouts.app')
-@section('title')
-    {{ __('Patient Statement Report') }}
+
+@section('title', __('Patient Statement Report'))
+
+@section('page_css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.bootstrap5.min.css">
+
+    <style>
+        @media print {
+            .no-print, .btn-group, #liveSearch { display: none !important; }
+            .actions-column { display: none !important; }
+        }
+        /* Hide Actions column in exports too */
+        .dt-button { background: transparent !important; }
+    </style>
 @endsection
+
 @section('content')
 @include('flash::message')
-    <div class="container-fluid">
-        <div class="d-md-flex align-items-center justify-content-between mb-7">
-            <h1 class="mb-0">{{ __('Patient Statement Report') }}</h1>
-            <div>
-                <button id="printReport" class="btn btn-primary me-2">
-                    <i class="fas fa-print"></i> {{ __('Print Report') }}
-                </button>
-                <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-left"></i> {{ __('Back to Reports') }}
-                </a>
+
+<div class="container-fluid">
+    <div class="d-md-flex align-items-center justify-content-between mb-7">
+        <h1 class="mb-0">{{ __('Patient Statement Report') }}</h1>
+        <div class="d-flex align-items-center gap-2">
+            <button id="printReport" class="btn btn-primary">
+                <i class="fas fa-print"></i> Print
+            </button>
+
+            <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="mb-5">
+        <input type="text" id="liveSearch" class="form-control form-control-lg" 
+               placeholder="Search services, dates, amounts..." autofocus>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="patientStatementWrapper">
+                @livewire('patient-statement-report')
             </div>
         </div>
-        <div class="d-flex flex-column flex-lg-row">
-            <div class="flex-lg-row-fluid mb-10 mb-lg-0">
-                <div class="row">
-                    <div class="col-12">
-                        @livewire('patient-statement-report')
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
+</div>
 @endsection
+
 @section('page_scripts')
-    <script>
-        $(document).ready(function() {
-            $('#printReport').click(function() {
-                console.log('Print button clicked');
-                
-                // Create a new window for printing
-                let printWindow = window.open('', '_blank');
-                
-                // Get the date range from the report
-                let dateRange = $('.date-range-display').text().trim();
-                dateRange = dateRange.replace(/\s+/g, ' ').trim(); // Clean up whitespace
-                console.log('Date range:', dateRange);
-                
-                try {
-                    // Get the table HTML
-                    let tableHTML = '';
-                    let tableFound = false;
-                    
-                    // Try to get the table content
-                    const visibleTable = document.querySelector('.table-responsive table');
-                    if (visibleTable) {
-                        tableHTML = visibleTable.outerHTML;
-                        tableFound = true;
-                        console.log('Table found in visible section');
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+
+<script>
+let table = null;
+
+function initializeDataTable() {
+    const tableEl = document.querySelector('#patientStatementWrapper .table-responsive table') ||
+                    document.querySelector('#patientStatementWrapper table');
+    if (!tableEl) return;
+
+    if (table) { table.destroy(); table = null; }
+
+    setTimeout(() => {
+        try {
+            table = $(tableEl).DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Excel',
+                        className: 'buttons-excel',
+                        exportOptions: { columns: ':not(.actions-column)' } // EXCLUDE ACTIONS
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        text: 'CSV',
+                        className: 'buttons-csv',
+                        exportOptions: { columns: ':not(.actions-column)' }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        text: 'PDF',
+                        className: 'buttons-pdf',
+                        orientation: 'landscape',
+                        exportOptions: { columns: ':not(.actions-column)' },
+                        customize: function(doc) {
+                            // Remove actions column header & data in PDF
+                            doc.content[1].table.widths = Array(doc.content[1].table.body[0].length + 1).join('*').split('');
+                            let colCount = doc.content[1].table.body[0].length;
+                            for (let i = 0; i < doc.content[1].table.body.length; i++) {
+                                doc.content[1].table.body[i].splice(-1, 1); // Remove last column
+                            }
+                        }
                     }
-                    
-                    // Get patient information if available
-                    let patientInfo = '';
-                    const patientName = document.querySelector('.patient-info h3');
-                    const patientDetails = document.querySelectorAll('.patient-info p');
-                    
-                    if (patientName) {
-                        patientInfo += `<h3>${patientName.textContent}</h3>`;
-                        patientDetails.forEach(detail => {
-                            patientInfo += `<p>${detail.textContent}</p>`;
-                        });
-                    }
-                    
-                    // Process the table HTML to remove icons and simplify it
-                    if (tableFound) {
-                        // Create a temporary div to manipulate the HTML
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = tableHTML;
-                        
-                        // Remove all icons, images, and unnecessary elements
-                        const icons = tempDiv.querySelectorAll('i, svg, img, .avatar-circle, .avatar, .icon');
-                        icons.forEach(icon => icon.remove());
-                        
-                        // Remove any action buttons or links that shouldn't be printed
-                        const actionButtons = tempDiv.querySelectorAll('.action-btn, .btn, button');
-                        actionButtons.forEach(btn => btn.remove());
-                        
-                        // Get the simplified table HTML
-                        tableHTML = tempDiv.innerHTML;
-                    }
-                    
-                    // Create the print content
-                    printWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Patient Statement Report</title>
-                            <style>
-                                body { 
-                                    font-family: Arial, sans-serif; 
-                                    padding: 30px; 
-                                    max-width: 1000px; 
-                                    margin: 0 auto;
-                                }
-                                .print-header { 
-                                    text-align: center; 
-                                    margin-bottom: 30px; 
-                                }
-                                .print-header h1 { 
-                                    font-size: 24px; 
-                                    font-weight: bold; 
-                                    margin-bottom: 5px; 
-                                }
-                                .print-header p { 
-                                    font-size: 14px; 
-                                    color: #555; 
-                                    margin-bottom: 5px; 
-                                }
-                                .patient-info {
-                                    margin-bottom: 20px;
-                                }
-                                .patient-info h3 {
-                                    margin-bottom: 5px;
-                                }
-                                .patient-info p {
-                                    margin: 2px 0;
-                                }
-                                table {
-                                    width: 100%;
-                                    border-collapse: collapse;
-                                    margin-top: 20px;
-                                    margin-bottom: 30px;
-                                }
-                                th, td {
-                                    border: 1px solid #ddd;
-                                    padding: 10px;
-                                    text-align: left;
-                                    font-size: 12px;
-                                }
-                                th {
-                                    background-color: #f2f2f2;
-                                    font-weight: bold;
-                                }
-                                /* Convert badges to simple text */
-                                .badge {
-                                    display: inline;
-                                    padding: 0;
-                                    font-size: inherit;
-                                    font-weight: normal;
-                                    line-height: inherit;
-                                    text-align: inherit;
-                                    white-space: inherit;
-                                    vertical-align: inherit;
-                                    border-radius: 0;
-                                    background-color: transparent !important;
-                                }
-                                /* Reset all badge colors to default text color */
-                                .bg-light-success, .bg-light-danger, .bg-light-primary, .bg-light-warning,
-                                .bg-success, .bg-danger, .bg-primary, .bg-warning,
-                                .text-success, .text-danger, .text-primary, .text-warning {
-                                    color: inherit !important;
-                                    background-color: transparent !important;
-                                }
-                                /* Hide unnecessary elements */
-                                .avatar-circle, .avatar, .icon, svg, i, img, .action-btn {
-                                    display: none !important;
-                                }
-                                /* Remove link styling */
-                                a {
-                                    text-decoration: none;
-                                    color: inherit;
-                                }
-                                /* Print buttons */
-                                .no-print {
-                                    text-align: center;
-                                    margin-top: 30px;
-                                    margin-bottom: 20px;
-                                }
-                                /* Reset button styles for print buttons */
-                                .no-print .btn {
-                                    display: inline-block !important;
-                                    font-weight: 500 !important;
-                                    text-align: center !important;
-                                    vertical-align: middle !important;
-                                    user-select: none !important;
-                                    padding: 0.65rem 1rem !important;
-                                    font-size: 1rem !important;
-                                    line-height: 1.5 !important;
-                                    border-radius: 0.42rem !important;
-                                    cursor: pointer !important;
-                                    margin: 0 5px !important;
-                                }
-                                .no-print .btn-primary {
-                                    color: #fff !important;
-                                    background-color: #3699FF !important;
-                                    border: 1px solid #3699FF !important;
-                                }
-                                .no-print .btn-secondary {
-                                    color: #3F4254 !important;
-                                    background-color: #E4E6EF !important;
-                                    border: 1px solid #E4E6EF !important;
-                                }
-                                .print-footer { 
-                                    text-align: center; 
-                                    margin-top: 30px; 
-                                    font-size: 12px; 
-                                    color: #777; 
-                                    padding-bottom: 20px;
-                                }
-                                @media print {
-                                    body { 
-                                        padding: 15px; 
-                                        margin: 0 auto;
-                                    }
-                                    .no-print {
-                                        display: none !important;
-                                    }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="print-header">
-                                <h1>{{env('APP_NAME')}}</h1>
-                                <h2>Patient Statement Report</h2>
-                                <p>Period: ${dateRange}</p>
-                                <p>Generated on: ${new Date().toLocaleString()}</p>
-                            </div>
-                            
-                            <div class="patient-info">
-                                ${patientInfo}
-                            </div>
-                            
-                            <div id="print-content">
-                                ${tableFound ? tableHTML : `<p>No patient statement records found</p>`}
-                            </div>
-                            
-                            <div class="print-footer">
-                                <p>© ${new Date().getFullYear()} Hospital Management System</p>
-                            </div>
-                            
-                            <div class="text-center mt-4 no-print">
-                                <button type="button" class="btn btn-primary btn-print" onclick="window.print();" style="display: inline-block !important;">
-                                    Print Now
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-close" onclick="window.close();" style="display: inline-block !important;">
-                                    Close
-                                </button>
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    
-                    // Finish and print
-                    printWindow.document.close();
-                    printWindow.focus();
-                    
-                    // Add a small delay before printing to ensure content is fully loaded
-                    setTimeout(function() {
-                        printWindow.print();
-                    }, 500);
-                    
-                } catch (e) {
-                    console.error('Error printing report:', e);
-                    alert('Error printing report: ' + e.message);
-                    if (printWindow) printWindow.close();
-                }
+                ],
+                pageLength: 25,
+                order: [[0, 'desc']],
+                columnDefs: [
+                    { targets: '_all', defaultContent: '' },
+                    { targets: 'actions-column', className: 'actions-column', visible: true } // Visible on screen only
+                ],
+                searching: true,
+                destroy: true
             });
-        });
-    </script>
+
+            // Connect top buttons
+            $('#exportExcel').off('click').on('click', () => table.buttons('.buttons-excel').trigger());
+            $('#exportCsv').off('click').on('click', () => table.buttons('.buttons-csv').trigger());
+            $('#exportPdf').off('click').on('click', () => table.buttons('.buttons-pdf').trigger());
+
+            // Live Search
+            $('#liveSearch').off('input').on('input', function() {
+                table.search(this.value).draw();
+            });
+
+        } catch (e) {
+            console.warn('DataTable not ready:', e);
+        }
+    }, 500);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', initializeDataTable);
+document.addEventListener('livewire:load', initializeDataTable);
+document.addEventListener('livewire:update', initializeDataTable);
+
+// === PRINT: Actions column removed ===
+$('#printReport').click(function() {
+    const printWin = window.open('', '_blank');
+    const dateRange = $('.date-range-display').text().trim().replace(/\s+/g, ' ') || 'All Time';
+
+    let patientInfo = '';
+    const nameEl = document.querySelector('.patient-info h3');
+    const details = document.querySelectorAll('.patient-info p');
+    if (nameEl) {
+        patientInfo += `<h3>${nameEl.textContent}</h3>`;
+        details.forEach(p => patientInfo += `<p>${p.textContent}</p>`);
+    }
+
+    let tableHTML = '';
+    const tableEl = document.querySelector('#patientStatementWrapper .table-responsive table') ||
+                    document.querySelector('#patientStatementWrapper table');
+    if (tableEl) {
+        const temp = tableEl.cloneNode(true);
+        // Remove Actions column (last column)
+        temp.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+        temp.querySelectorAll('i, svg, img, button, .btn').forEach(el => el.remove());
+        tableHTML = temp.outerHTML;
+    }
+
+    printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Patient Statement Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 30px; max-width: 1000px; margin: 0 auto; }
+                .header { text-align: center; margin-bottom: 30px; }
+                h1 { font-size: 24px; margin: 5px 0; }
+                .patient-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { border: 1px solid #ddd; padding: 10px; font-size: 12px; text-align: left; }
+                th { background: #f2f2f2; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>{{ env('APP_NAME') }}</h1>
+                <h2>Patient Statement Report</h2>
+                <p><strong>Period:</strong> ${dateRange}</p>
+                <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+            <div class="patient-info">${patientInfo || '<p>No patient info</p>'}</div>
+            ${tableHTML || '<p>No records found</p>'}
+            <div style="text-align:center; margin-top:50px; color:#777; font-size:12px;">
+                <p>&copy; ${new Date().getFullYear()} Hospital Management System</p>
+            </div>
+        </body>
+        </html>
+    `);
+
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => printWin.print(), 1000);
+});
+</script>
 @endsection

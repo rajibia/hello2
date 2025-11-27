@@ -54,14 +54,9 @@
 @section('content')
     @include('flash::message')
     <div>
-        <!-- <div class="card-header border-0 pt-6">
-            <div class="card-title">
-                <h2>{{ __('Reports Dashboard') }}</h2>
-            </div>
-        </div> -->
         <div class="card-body pt-0 fs-6 py-8 px-8 px-lg-10 text-gray-700">
             <div class="row g-5 g-xl-8">
-                <!-- Report Category: Patient Reports -->
+                
                 <div class="col-xl-6">
                     <div class="card report-card card-xl-stretch mb-5 mb-xl-8">
                         <div class="card-header border-0">
@@ -96,7 +91,6 @@
                     </div>
                 </div>
 
-                <!-- Report Category: Financial Reports -->
                 <div class="col-xl-6">
                     <div class="card report-card card-xl-stretch mb-5 mb-xl-8">
                         <div class="card-header border-0">
@@ -131,7 +125,8 @@
                     </div>
                 </div>
 
-                <!-- Report Category: Inventory Reports -->
+
+                
                 <div class="col-xl-6">
                     <div class="card report-card card-xl-stretch mb-5 mb-xl-8">
                         <div class="card-header border-0">
@@ -177,6 +172,31 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="col-xl-6">
+                    <div class="card report-card card-xl-stretch mb-5 mb-xl-8">
+                        <div class="card-header border-0">
+                            <h3 class="card-title report-category-title align-items-start flex-column">
+                                <span class="card-label fw-bolder fs-3 mb-1">Laboratory Reports</span>
+                            </h3>
+                        </div>
+                        <div class="card-body py-3">
+                            <div class="d-flex flex-column">
+                                {{-- Assuming a route 'reports.laboratory-attendance' for Attendance --}}
+                                <a href="{{ route('reports.laboratory_attendance') }}" class="report-link text-gray-800 text-hover-primary fs-5">
+                                    <div class="report-icon bg-light-warning text-warning"><i class="fas fa-user-check"></i></div>
+                                    <span>Attendance Report</span>
+                                </a>
+                                {{-- Assuming a route 'reports.laboratory-investigations' for Test Investigations Done --}}
+                                <a href="{{ route('reports.laboratory_investigation') }}" class="report-link text-gray-800 text-hover-primary fs-5">
+                                    <div class="report-icon bg-light-info text-info"><i class="fas fa-vial"></i></div>
+                                    <span>Test Investigations Done Report</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

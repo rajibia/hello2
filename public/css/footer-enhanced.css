@@ -1,0 +1,283 @@
+/* Enhanced Footer Styling */
+
+:root {
+    --footer-primary: #0D47A1;
+    --footer-accent: #1E88E5;
+    --footer-bg: #F8FAFC;
+    --footer-border: #E8EEF5;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --shadow-light: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Footer Container */
+.footer {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F5F8FC 100%);
+    border-top: 2px solid var(--footer-border);
+    box-shadow: 0 -4px 20px rgba(13, 71, 161, 0.08), var(--shadow-light);
+    padding: 2rem 1.5rem !important;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    margin-top: auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.footer:hover {
+    box-shadow: 0 -6px 30px rgba(13, 71, 161, 0.12);
+}
+
+/* Footer Content Container */
+.footer .container-fluid {
+    max-width: 100%;
+    padding: 0 1rem;
+}
+
+/* Footer Text Styling */
+.footer .text-muted {
+    color: var(--text-secondary) !important;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.footer .text-muted span {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.footer .text-muted a {
+    color: var(--footer-primary) !important;
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+}
+
+.footer .text-muted a::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--footer-primary), var(--footer-accent));
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.footer .text-muted a:hover {
+    color: var(--footer-accent) !important;
+    background: rgba(13, 71, 161, 0.08);
+    transform: translateY(-2px);
+}
+
+.footer .text-muted a:hover::before {
+    width: 80%;
+}
+
+/* Copyright Symbol */
+.footer .text-muted .fw-bold {
+    color: var(--footer-primary);
+    font-weight: 700 !important;
+    background: rgba(13, 71, 161, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.footer .text-muted .fw-bold:hover {
+    background: rgba(13, 71, 161, 0.15);
+}
+
+/* Version Number */
+.footer .order-2.order-md-1 {
+    color: var(--text-secondary) !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(13, 71, 161, 0.1) 0%, rgba(30, 136, 229, 0.05) 100%);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid rgba(13, 71, 161, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(13, 71, 161, 0.06);
+}
+
+.footer .order-2.order-md-1:hover {
+    background: linear-gradient(135deg, rgba(13, 71, 161, 0.15) 0%, rgba(30, 136, 229, 0.1) 100%);
+    color: var(--footer-primary) !important;
+    border-color: rgba(13, 71, 161, 0.3);
+    box-shadow: 0 4px 16px rgba(13, 71, 161, 0.12);
+    transform: translateY(-2px);
+}
+
+.footer .order-2.order-md-1 span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer .order-2.order-md-1 span::before {
+    content: '•';
+    color: var(--footer-accent);
+    font-weight: bold;
+}
+
+/* Footer Divider */
+.footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 2rem;
+    right: 2rem;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, var(--footer-primary) 50%, transparent 100%);
+    opacity: 0.3;
+}
+
+/* Responsive Footer */
+@media (max-width: 768px) {
+    .footer {
+        padding: 1.5rem 1rem !important;
+    }
+    
+    .footer .container-fluid {
+        gap: 1.5rem;
+    }
+    
+    .footer .text-muted {
+        justify-content: center;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .footer .order-2.order-md-1 {
+        padding: 0.65rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .footer {
+        padding: 1.25rem 0.75rem !important;
+    }
+    
+    .footer .text-muted {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .footer .text-muted span {
+        font-size: 0.9rem;
+    }
+    
+    .footer .text-muted a {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.95rem;
+    }
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+    .footer {
+        background: linear-gradient(180deg, #1E1E1E 0%, #212121 100%);
+        border-top-color: #383838;
+        box-shadow: 0 -4px 20px rgba(13, 71, 161, 0.15), 0 -2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .footer .text-muted {
+        color: #999999 !important;
+    }
+    
+    .footer .text-muted a {
+        background: rgba(13, 71, 161, 0.15);
+    }
+    
+    .footer .text-muted a:hover {
+        background: rgba(30, 136, 229, 0.2);
+    }
+    
+    .footer .text-muted .fw-bold {
+        background: rgba(13, 71, 161, 0.2);
+    }
+    
+    .footer .order-2.order-md-1 {
+        background: linear-gradient(135deg, rgba(13, 71, 161, 0.15) 0%, rgba(30, 136, 229, 0.08) 100%);
+        border-color: rgba(13, 71, 161, 0.2);
+    }
+    
+    .footer .order-2.order-md-1:hover {
+        background: linear-gradient(135deg, rgba(13, 71, 161, 0.25) 0%, rgba(30, 136, 229, 0.15) 100%);
+        border-color: rgba(13, 71, 161, 0.35);
+    }
+}
+
+/* Accessibility */
+.footer a:focus,
+.footer .order-2.order-md-1:focus {
+    outline: 2px solid var(--footer-primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* Animation on Load */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.footer {
+    animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Smooth Transitions */
+.footer,
+.footer .text-muted a,
+.footer .order-2.order-md-1 {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Print Styles */
+@media print {
+    .footer {
+        display: none;
+    }
+}
+
+/* Text Selection */
+.footer ::selection {
+    background: rgba(13, 71, 161, 0.3);
+    color: var(--footer-primary);
+}
+
+.footer ::-moz-selection {
+    background: rgba(13, 71, 161, 0.3);
+    color: var(--footer-primary);
+}
+
+/* Enhanced Spacing */
+.footer .d-flex {
+    row-gap: 1rem;
+    column-gap: 1rem;
+}
+
+/* Micro-interactions */
+.footer .text-muted span {
+    transition: all 0.3s ease;
+}
+
+.footer .text-muted span:hover {
+    letter-spacing: 0.5px;
+}
+

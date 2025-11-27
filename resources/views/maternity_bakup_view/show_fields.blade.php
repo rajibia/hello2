@@ -708,7 +708,13 @@
                             Systemic Examination
                         </button>
                     </li>
-
+<li class="nav-item position-relative me-7 mb-3" role="presentation">
+                        <button class="nav-link p-0" id="opdProvisionalDiagnosis-tab" data-bs-toggle="tab"
+                            data-bs-target="#opdProvisionalDiagnosis" type="button" role="tab"
+                            aria-controls="ProvisionalDiagnosis" aria-selected="true">
+                            Provisional Diagnosis
+                        </button>
+                    </li>
 
                     <li class="nav-item position-relative me-7 mb-3" role="presentation">
                         <button class="nav-link p-0" id="maternityDiagnosisDiagnosis-tab" data-bs-toggle="tab"
@@ -718,13 +724,6 @@
                         </button>
                     </li>
                     
-                    <li class="nav-item position-relative me-7 mb-3" role="presentation">
-                        <button class="nav-link p-0" id="opdProvisionalDiagnosis-tab" data-bs-toggle="tab"
-                            data-bs-target="#opdProvisionalDiagnosis" type="button" role="tab"
-                            aria-controls="ProvisionalDiagnosis" aria-selected="true">
-                            Provisional Diagnosis
-                        </button>
-                    </li>
                     <li class="nav-item position-relative me-7 mb-3" role="presentation">
                         <button class="nav-link p-0" id="cases-tab" data-bs-toggle="tab"
                             data-bs-target="#opdPathology" type="button" role="tab" aria-controls="cases"

@@ -3,6 +3,27 @@
         table th {
             padding: 0.5rem !important;
         }
+        
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        .export-btn {
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .export-btn[disabled] {
+            opacity: 0.6;
+        }
     </style>
     <div class="mb-5 mb-xl-10">
         <div class="pt-3">
@@ -72,6 +93,65 @@
             <!-- Card with Table -->
             <div class="card">
                 <div class="card-body pb-3 pt-5">
+                    <!-- Export Buttons -->
+                    <div class="export-buttons">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-success btn-sm export-btn" wire:click="exportToCSV()">
+                                <i class="fas fa-download me-2"></i> CSV
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm export-btn text-white" wire:click="exportToExcel()">
+                                <i class="fas fa-file-excel me-2"></i> Excel
+                            </button>
+                                <button type="button" class="btn btn-danger btn-sm export-btn" wire:click="exportToPDF">
+                                    <i class="fas fa-file-pdf me-2"></i> PDF
+                                </button>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm export-btn" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i> Print
+                        </button>
+                    </div>
+                    <!-- End Export Buttons -->
+                    
+                    <script>
+                        document.addEventListener('livewire:load', function () {
+                            // Listen for server dispatched download events and trigger client download
+                            window.addEventListener('download-file', function (e) {
+                                try {
+                                    const detail = e.detail || {};
+                                    const filename = detail.filename || 'download';
+                                    const b64Data = detail.data || '';
+                                    const contentType = detail.type || 'application/octet-stream';
+
+                                    const byteCharacters = atob(b64Data);
+                                    const byteNumbers = new Array(byteCharacters.length);
+                                    for (let i = 0; i < byteCharacters.length; i++) {
+                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                    }
+                                    const byteArray = new Uint8Array(byteNumbers);
+                                    const blob = new Blob([byteArray], { type: contentType });
+
+                                    const link = document.createElement('a');
+                                    link.href = URL.createObjectURL(blob);
+                                    link.download = filename;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    setTimeout(function () {
+                                        URL.revokeObjectURL(link.href);
+                                        link.remove();
+                                    }, 100);
+                                } catch (err) {
+                                    console.error('Download failed', err);
+                                }
+                            });
+
+                            window.addEventListener('export-error', function (e) {
+                                const msg = (e.detail && e.detail.message) ? e.detail.message : 'Export failed';
+                                console.error(msg);
+                                alert(msg);
+                            });
+                        });
+                    </script>
+                    
                     <div class="table-responsive">
                         <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
                             <thead>

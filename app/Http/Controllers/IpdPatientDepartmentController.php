@@ -30,7 +30,6 @@ use App\Repositories\PatientCaseRepository;
 
 class IpdPatientDepartmentController extends AppBaseController
 {
-    /** @var IpdPatientDepartmentRepository */
     private $ipdPatientDepartmentRepository;
     private $pathologyTestTemplateRepository;
     private $radiologyTestTemplateRepository;
@@ -38,12 +37,14 @@ class IpdPatientDepartmentController extends AppBaseController
     private $radiologyTestRepository;
     private $patientCaseRepository;
 
-
-
-    public function __construct(IpdPatientDepartmentRepository $ipdPatientDepartmentRepo, PathologyTestTemplateRepository $pathologyTestTemplateRepo,
-            PathologyTestRepository $pathologyTestRepo, PatientCaseRepository $patientCaseRepository,
-            RadiologyTestTemplateRepository $radiologyTestTemplateRepo, RadiologyTestRepository $radiologyTestRepo)
-    {
+    public function __construct(
+        IpdPatientDepartmentRepository $ipdPatientDepartmentRepo,
+        PathologyTestTemplateRepository $pathologyTestTemplateRepo,
+        PathologyTestRepository $pathologyTestRepo,
+        PatientCaseRepository $patientCaseRepository,
+        RadiologyTestTemplateRepository $radiologyTestTemplateRepo,
+        RadiologyTestRepository $radiologyTestRepo
+    ) {
         $this->ipdPatientDepartmentRepository = $ipdPatientDepartmentRepo;
         $this->pathologyTestRepository = $pathologyTestRepo;
         $this->pathologyTestTemplateRepository = $pathologyTestTemplateRepo;
@@ -52,12 +53,14 @@ class IpdPatientDepartmentController extends AppBaseController
         $this->patientCaseRepository = $patientCaseRepository;
     }
 
+    /**
+     * Display a listing of IPD patients.
+     */
     public function index(Request $request)
     {
         $filter = $request->query('filter');
         $pageTitle = __('messages.ipd_patient.ipd_patients');
 
-        // Set page title based on filter
         if ($filter === 'current') {
             $pageTitle = __('Current IPD Patients');
         } elseif ($filter === 'old') {
@@ -69,76 +72,73 @@ class IpdPatientDepartmentController extends AppBaseController
         return view('ipd_patient_departments.index', compact('statusArr', 'filter', 'pageTitle'));
     }
 
+    /**
+     * Get doctor-specific charges (AJAX helper).
+     */
     public function getDoctorCharges(Request $request)
     {
         $doctorId = $request->input('doctor_id');
 
-        // // Get charges specific to this doctor
-        // $charges = ConsultationCharge::where('doctor_id', $doctorId)
-        //             ->pluck('name', 'id');
-
-        // Get standard charge - default to 0 if not set
-        $standardCharge = \DB::table('doctor_opd_charges')->where('doctor_id',$doctorId)->value('standard_charge') ?? 0;
+        $standardCharge = \DB::table('doctor_opd_charges')->where('doctor_id', $doctorId)->value('standard_charge') ?? 0;
 
         return response()->json([
             'charges' => [],
-            'standard_charge' => number_format($standardCharge, 2)
+            'standard_charge' => number_format($standardCharge, 2),
         ]);
     }
 
+    /**
+     * Show the form for creating a new IPD patient.
+     */
     public function create(Request $request)
     {
-
-
         $data = $this->ipdPatientDepartmentRepository->getAssociatedData();
 
-        $data['patient_id'] = $request->query()['ref_p_id'] ?? '';
+        $data['patient_id'] = $request->query('ref_p_id', '');
 
-        $patient = \App\Models\Patient::where('patients.id',$data['patient_id'])
-                        ->join('users','users.id','patients.user_id')
-                        ->first();
-        $data['patient_name'] = ($patient->first_name ?? '').' '.($patient->last_name ?? '');
+        $patient = Patient::where('patients.id', $data['patient_id'])
+            ->join('users', 'users.id', 'patients.user_id')
+            ->first();
 
+        $data['patient_name'] = trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? ''));
 
-        // Initialize variables
         $users = null;
         $patients = $data['patients'] ?? [];
 
-        // Handle the search functionality
+        // Optional search implemented in the view
         if ($request->has('search_by') && $request->has('search_value')) {
-            // First, validate the search input
             $request->validate([
                 'search_by' => 'required|string|in:name,phone,location,insurance_number',
-                'search_value' => 'required|string|max:255'
+                'search_value' => 'required|string|max:255',
             ]);
 
-            // Retrieve the search by and search value from the request
             $searchBy = $request->input('search_by');
             $searchValue = $request->input('search_value');
 
-            // Let's query the db User model based on the selected search by option
-            $users = User::query();
-            if ($searchBy == 'name') {
-                // Search by both last name and first name
-                $users->where(function ($query) use ($searchValue) {
-                    $query->where('first_name', 'LIKE', "%{$searchValue}%")
+            $usersQuery = User::query();
+
+            if ($searchBy === 'name') {
+                $usersQuery->where(function ($q) use ($searchValue) {
+                    $q->where('first_name', 'LIKE', "%{$searchValue}%")
                         ->orWhere('last_name', 'LIKE', "%{$searchValue}%");
                 });
-            } elseif ($searchBy == 'phone') {
-                $users->where('phone', 'LIKE', "%{$searchValue}%");
-            } elseif ($searchBy == 'location') {
-                $users->where('location', 'LIKE', "%{$searchValue}%");
-            } elseif ($searchBy == 'insurance_number') {
-                $users->where('insurance_number', 'LIKE', "%{$searchValue}%");
+            } elseif ($searchBy === 'phone') {
+                $usersQuery->where('phone', 'LIKE', "%{$searchValue}%");
+            } elseif ($searchBy === 'location') {
+                $usersQuery->where('location', 'LIKE', "%{$searchValue}%");
+            } elseif ($searchBy === 'insurance_number') {
+                $usersQuery->where('insurance_number', 'LIKE', "%{$searchValue}%");
             }
 
-            // Get the results
-            $users = $users->get();
+            $users = $usersQuery->get();
         }
 
         return view('ipd_patient_departments.create', compact('data', 'users', 'patients'));
     }
 
+    /**
+     * AJAX patient live search used on the create page.
+     */
     public function patient_search(Request $request)
     {
         try {
@@ -148,20 +148,16 @@ class IpdPatientDepartmentController extends AppBaseController
                 return response()->json([]);
             }
 
-            // Search for patients using the Patient model with patientUser relationship
             $patients = Patient::with('patientUser')
                 ->whereHas('patientUser', function ($query) use ($search) {
-                    // Filter by user status (active)
-                    $query->where('status', 1);
-
-                    // Apply search conditions on the User model
-                    $query->where(function ($userQuery) use ($search) {
-                        $userQuery->where('first_name', 'LIKE', "%{$search}%")
-                                  ->orWhere('last_name', 'LIKE', "%{$search}%")
-                                  ->orWhere('phone', 'like', "%{$search}%")
-                                  ->orWhere('email', 'like', "%{$search}%")
-                                  ->orWhere('insurance_number', 'like', "%{$search}%");
-                    });
+                    $query->where('status', 1)
+                        ->where(function ($userQuery) use ($search) {
+                            $userQuery->where('first_name', 'LIKE', "%{$search}%")
+                                      ->orWhere('last_name', 'LIKE', "%{$search}%")
+                                      ->orWhere('phone', 'LIKE', "%{$search}%")
+                                      ->orWhere('email', 'LIKE', "%{$search}%")
+                                      ->orWhere('insurance_number', 'LIKE', "%{$search}%");
+                        });
                 })
                 ->limit(10)
                 ->get()
@@ -174,33 +170,38 @@ class IpdPatientDepartmentController extends AppBaseController
                             'name' => $patient->patientUser->full_name ?? '',
                             'phone' => $patient->patientUser->phone ?? '',
                             'gender' => $patient->patientUser->gender ?? '',
-                        ]
+                        ],
                     ];
                 });
 
             return response()->json($patients);
-
         } catch (\Exception $e) {
             \Log::error('Patient search error: ' . $e->getMessage());
             return response()->json(['error' => 'Search failed'], 500);
         }
     }
 
+    /**
+     * Return list of unassigned beds for a given bed type.
+     */
     public function getUnassignedBeds($bedTypeId)
     {
-        $assignedBedIds = \DB::table('bed_assigns')->pluck('bed_id')->where('status','1');
+        $assignedBedIds = \DB::table('bed_assigns')->where('status', '1')->pluck('bed_id')->toArray();
 
-        $beds = \DB::table('beds')->where('bed_type_id', $bedTypeId)
-               ->whereNotIn('id', $assignedBedIds)
-               ->where('is_available','1')
-               ->pluck('name', 'id');
+        $beds = \DB::table('beds')
+            ->where('bed_type_id', $bedTypeId)
+            ->whereNotIn('id', $assignedBedIds)
+            ->where('is_available', '1')
+            ->pluck('name', 'id');
 
         return response()->json($beds);
     }
 
+    /**
+     * Generic diagnosis search helper.
+     */
     public function search(Request $request)
     {
-
         $query = $request->get('query', '');
 
         $results = DiagnosisCategory::where('code', 'like', "%$query%")
@@ -211,28 +212,84 @@ class IpdPatientDepartmentController extends AppBaseController
         return response()->json($results);
     }
 
-
+    /**
+     * Store a newly created IPD patient department record.
+     *
+     * This method:
+     * - prevents duplicate active admissions for the same patient,
+     * - delegates the actual creation to repository,
+     * - supports AJAX and normal form submission responses,
+     * - supports optional redirect to pathology creation if form sent create_from_route = 'pathology'.
+     *
+     * @param CreateIpdPatientDepartmentRequest $request
+     */
     public function store(CreateIpdPatientDepartmentRequest $request)
     {
         $input = $request->all();
-        $ipdPatient = $this->ipdPatientDepartmentRepository->store($input);
-        $this->ipdPatientDepartmentRepository->createNotification($input);
 
-        if ($request->ajax()) {
+        // 1) Duplicate active-admission check
+        $patientId = $input['patient_id'] ?? null;
+        if ($patientId) {
+            $existingAdmission = IpdPatientDepartment::where('patient_id', $patientId)
+                ->where('discharge', 0)
+                ->first();
+
+            if ($existingAdmission) {
+                $message = 'Patient is already admitted (Active IPD No: ' . ($existingAdmission->ipd_number ?? 'N/A') . ')';
+
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'data' => null,
+                    ], 409);
+                }
+
+                Flash::error($message);
+                return redirect(route('ipd.patient.create'))->withInput();
+            }
+        }
+
+        // 2) Create the IPD using repository
+        $ipdPatient = $this->ipdPatientDepartmentRepository->store($input);
+
+        // 3) Optional notification creation
+        try {
+            $this->ipdPatientDepartmentRepository->createNotification($input);
+        } catch (\Exception $ex) {
+            // log and continue (notification failure shouldn't block main flow)
+            \Log::warning('IPD notification creation failed: ' . $ex->getMessage());
+        }
+
+        // 4) AJAX vs normal response
+        if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => __('messages.ipd_patient.ipd_patient').' '.__('messages.common.saved_successfully'),
-                'data' => $ipdPatient
+                'message' => __('messages.ipd_patient.ipd_patient') . ' ' . __('messages.common.saved_successfully'),
+                'data' => $ipdPatient,
             ]);
         }
 
-        Flash::success(__('messages.ipd_patient.ipd_patient').' '.__('messages.common.saved_successfully'));
+        Flash::success(__('messages.ipd_patient.ipd_patient') . ' ' . __('messages.common.saved_successfully'));
+
+        // 5) Optional redirect target: if caller wanted to continue to pathology creation
+        //    (This is convenient when the create form was opened from the pathology flow)
+        if (!empty($input['create_from_route']) && $input['create_from_route'] === 'pathology') {
+            // Assumes a route like route('pathology.test.create', ['ref_ipd_id' => $ipdPatient->id])
+            // Update route name/parameter if your routes differ.
+            return redirect()->route('pathology.test.create', ['ref_ipd_id' => $ipdPatient->id])
+                ->with('success', __('messages.ipd_patient.ipd_patient') . ' ' . __('messages.common.saved_successfully'));
+        }
+
+        // Default redirect to the IPD list (matches your screenshot)
         return redirect(route('ipd.patient.index'));
     }
 
+    /**
+     * Display the specified IPD patient department (show page).
+     */
     public function show(IpdPatientDepartment $ipdPatientDepartment)
     {
-
         $doctors = $this->ipdPatientDepartmentRepository->getDoctorsData();
 
         $consultantRegister = $this->ipdPatientDepartmentRepository->getConsultantRegister($ipdPatientDepartment->id);
@@ -261,21 +318,54 @@ class IpdPatientDepartmentController extends AppBaseController
         $opds = OpdPatientDepartment::whereHas('patient')->whereHas('doctor')->get()->pluck('opd_number', 'id');
         $ipds = IpdPatientDepartment::whereHas('patient')->whereHas('doctor')->get()->pluck('ipd_number', 'id');
         $maternitys = MaternityPatientDepartment::whereHas('patient')->whereHas('doctor')->get()->pluck('id', 'id');
+
         $case_id = $ipdPatientDepartment->patient_id !== '' ? PatientCase::where('patient_id', $ipdPatientDepartment->patient_id)->latest('created_at')->pluck('id')->first() : '';
         $caseIds = $ipdPatientDepartment->patient_id !== '' ? PatientCase::where('patient_id', $ipdPatientDepartment->patient_id)->get()->pluck('case_id', 'id')
-                                    : PatientCase::get()->pluck('case_id', 'id');
+            : PatientCase::get()->pluck('case_id', 'id');
+
         $pathologyTestTemplates = $this->pathologyTestTemplateRepository->getPathologyTemplate();
         $radiologyTestTemplates = $this->radiologyTestTemplateRepository->getRadiologyTemplate();
         $parameterList = $this->pathologyTestRepository->getParameterDataList();
         $parameterRadList = $this->radiologyTestRepository->getParameterDataList();
         $patientsVitals = Vital::where('patient_id', $ipdPatientDepartment->patient_id)->orderBy('created_at', 'desc')->first();
         $patientsAllVitals = Vital::where('patient_id', $ipdPatientDepartment->patient_id)->latest()->limit(10)->get();
-        // dd($patientsAllVitals);
-
 
         return view('ipd_patient_departments.show',
-            compact('ipdPatientDepartment', 'doctors', 'patientsVitals', 'parameterList', 'parameterRadList', 'case_id', 'caseIds', 'doctorsList', 'chargeTypes', 'medicineCategories', 'pathologyTestTemplates', 'radiologyTestTemplates',
-                'medicineCategoriesList', 'paymentModes', 'bill', 'patients', 'ipds', 'maternitys', 'consultantRegister', 'ipdTimeline', 'ipdPrescriptions', 'ipdCharges', 'ipdPayment', 'ipdDiagnosis', 'operationCategory', 'consultantDoctor', 'ipdOperation', 'doseDurationList', 'doseIntervalList', 'mealList', 'diagnosisCategories','patientsAllVitals','ipdProvisionalDiagnosis'));
+            compact(
+                'ipdPatientDepartment',
+                'doctors',
+                'patientsVitals',
+                'parameterList',
+                'parameterRadList',
+                'case_id',
+                'caseIds',
+                'doctorsList',
+                'chargeTypes',
+                'medicineCategories',
+                'pathologyTestTemplates',
+                'radiologyTestTemplates',
+                'medicineCategoriesList',
+                'paymentModes',
+                'bill',
+                'patients',
+                'ipds',
+                'maternitys',
+                'consultantRegister',
+                'ipdTimeline',
+                'ipdPrescriptions',
+                'ipdCharges',
+                'ipdPayment',
+                'ipdDiagnosis',
+                'operationCategory',
+                'consultantDoctor',
+                'ipdOperation',
+                'doseDurationList',
+                'doseIntervalList',
+                'mealList',
+                'diagnosisCategories',
+                'patientsAllVitals',
+                'ipdProvisionalDiagnosis'
+            ));
     }
 
     public function edit(IpdPatientDepartment $ipdPatientDepartment)
@@ -286,13 +376,11 @@ class IpdPatientDepartmentController extends AppBaseController
     }
 
     public function update(IpdPatientDepartment $ipdPatientDepartment, UpdateIpdPatientDepartmentRequest $request)
-
     {
-        // dd($request->all());
-        // return $ipdPatientDepartment;
         $input = $request->all();
         $this->ipdPatientDepartmentRepository->updateIpdPatientDepartment($input, $ipdPatientDepartment);
-        Flash::success(__('messages.ipd_patient.ipd_patient').' '.__('messages.common.updated_successfully'));
+
+        Flash::success(__('messages.ipd_patient.ipd_patient') . ' ' . __('messages.common.updated_successfully'));
 
         return redirect(route('ipd.patient.index'));
     }
@@ -301,43 +389,41 @@ class IpdPatientDepartmentController extends AppBaseController
     {
         $this->ipdPatientDepartmentRepository->deleteIpdPatientDepartment($ipdPatientDepartment);
 
-        return $this->sendSuccess(__('messages.ipd_patient.ipd_patient').' '.__('messages.common.deleted_successfully'));
+        return $this->sendSuccess(__('messages.ipd_patient.ipd_patient') . ' ' . __('messages.common.deleted_successfully'));
     }
 
-    public function getPatientCasesList(Request $request)
+    /**
+     * Get the list of patient cases for a given patient ID (for AJAX use).
+     */
+    public function getPatientCases(Request $request)
     {
+        $patientId = $request->get('patientId');
 
-        $input = [];
-        $input['patient_id']= $request->get('id');
-        $patientId = Patient::with('patientUser')->whereId($request->get('id'))->first();
-        $caseDate = date("y-m-d", strtotime("now"));
-        $input['date'] = $caseDate;
-        $input['fee'] = removeCommaFromNumbers(0);
-        $input['status'] = 1;
-        $input['phone'] = $patientId->patientUser->phone;
+        if (!$patientId) {
+            return $this->sendError('Patient ID is required');
+        }
 
-
-        $this->patientCaseRepository->store($input);
-        // $this->patientCaseRepository->createNotification($input);
-
-        $patientCases = $this->ipdPatientDepartmentRepository->getPatientCases($request->get('id'));
+        $patientCases = PatientCase::where('patient_id', $patientId)
+            ->pluck('case_id', 'id')
+            ->toArray();
 
         return $this->sendResponse($patientCases, 'Retrieved successfully');
     }
 
     public function getPatientBedsList(Request $request)
     {
-        $patientBeds = $this->ipdPatientDepartmentRepository->getPatientBeds($request->get('id'),
-        $request->get('isEdit'), $request->get('bedId'), $request->get('ipdPatientBedTypeId'));
+        $patientBeds = $this->ipdPatientDepartmentRepository->getPatientBeds(
+            $request->get('id'),
+            $request->get('isEdit'),
+            $request->get('bedId'),
+            $request->get('ipdPatientBedTypeId')
+        );
 
         return $this->sendResponse($patientBeds, 'Retrieved successfully');
     }
 
     /**
      * Get patient details for the IPD modal
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function getPatientDetails(Request $request)
     {
@@ -347,10 +433,9 @@ class IpdPatientDepartmentController extends AppBaseController
             return $this->sendError('Patient ID is required');
         }
 
-        // Get the patient's latest vital signs
         $vitals = Vital::where('patient_id', $patientId)
-                       ->orderBy('created_at', 'desc')
-                       ->first();
+            ->orderBy('created_at', 'desc')
+            ->first();
 
         $data = [];
 
@@ -360,7 +445,7 @@ class IpdPatientDepartmentController extends AppBaseController
                 'weight' => $vitals->weight,
                 'bp' => $vitals->blood_pressure,
                 'temperature' => $vitals->temperature,
-                'respiration' => $vitals->respiration
+                'respiration' => $vitals->respiration,
             ];
         }
 

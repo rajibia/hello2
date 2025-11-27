@@ -1,16 +1,33 @@
 @extends('layouts.app')
+
 @section('title')
     {{ __('Discharge Report') }}
 @endsection
+
 @section('page_css')
-    <!-- No additional CSS needed -->
+    <!-- Load required libraries for PDF & Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 @endsection
+
 @section('content')
     @include('flash::message')
+
     <div class="container-fluid">
         <div class="d-md-flex align-items-center justify-content-between mb-7">
             <h1 class="mb-0">{{ __('Discharge Report') }}</h1>
             <div>
+                <!-- Export Buttons -->
+                <button id="exportPDF" class="btn btn-danger me-2">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button id="exportExcel" class="btn btn-success me-2">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button id="exportCSV" class="btn btn-info me-2">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
                 <button id="printReport" class="btn btn-primary me-2">
                     <i class="fas fa-print"></i> {{ __('Print Report') }}
                 </button>
@@ -19,6 +36,7 @@
                 </a>
             </div>
         </div>
+
         <div class="d-flex flex-column flex-lg-row">
             <div class="flex-lg-row-fluid mb-10 mb-lg-0">
                 <div class="row">
@@ -28,260 +46,189 @@
                 </div>
             </div>
         </div>
+    </div>
 @endsection
+
 @section('page_scripts')
-    <script>
-        $(document).ready(function() {
-            $('#printReport').click(function() {
-                console.log('Print button clicked');
-                
-                // Create a new window for printing
-                let printWindow = window.open('', '_blank');
-                
-                // Get the date range from the report
-                let dateRange = $('.date-range-display').text().trim();
-                dateRange = dateRange.replace(/\s+/g, ' ').trim(); // Clean up whitespace
-                console.log('Date range:', dateRange);
-                
-                // Get the active tab
-                const activeTab = document.querySelector('.nav-link.active');
-                console.log('Active tab:', activeTab ? activeTab.textContent : 'none');
-                
-                try {
-                    // Determine which tab is active
-                    const isOpdTab = activeTab && (activeTab.textContent.includes('OPD') || activeTab.getAttribute('href') === '#opd-tab');
-                    const reportType = isOpdTab ? 'OPD' : 'IPD';
-                    console.log('Report type:', reportType);
-                    
-                    // Get the table content directly from the DOM
-                    const tabId = isOpdTab ? 'opd-tab' : 'ipd-tab';
-                    console.log('Looking for table in tab:', tabId);
-                    
-                    // Get the table HTML
-                    let tableHTML = '';
-                    let tableFound = false;
-                    
-                    // Method 1: Try getting the table from the visible tab
-                    const visibleTab = document.querySelector(`div.tab-pane.active table`);
-                    if (visibleTab) {
-                        tableHTML = visibleTab.outerHTML;
-                        tableFound = true;
-                        console.log('Table found in visible tab');
-                    }
-                    
-                    // Method 2: Try getting the table from the specific tab ID
-                    if (!tableFound) {
-                        const tabTable = document.querySelector(`#${tabId} table`);
-                        if (tabTable) {
-                            tableHTML = tabTable.outerHTML;
-                            tableFound = true;
-                            console.log(`Table found in #${tabId}`);
-                        }
-                    }
-                    
-                    // Method 3: Try using jQuery to find the table
-                    if (!tableFound) {
-                        const jqTable = $(`#${tabId}`).find('table');
-                        if (jqTable.length > 0) {
-                            tableHTML = jqTable[0].outerHTML;
-                            tableFound = true;
-                            console.log('Table found using jQuery');
-                        }
-                    }
-                    
-                    // Method 4: Try getting the print section
-                    if (!tableFound) {
-                        const printSection = document.getElementById(isOpdTab ? 'opdPrintSection' : 'ipdPrintSection');
-                        if (printSection) {
-                            tableHTML = printSection.innerHTML;
-                            tableFound = true;
-                            console.log('Print section found');
-                        }
-                    }
-                    
-                    console.log('Table found:', tableFound);
-                    
-                    // Process the table HTML to remove icons and simplify it
-                    if (tableFound) {
-                        // Create a temporary div to manipulate the HTML
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = tableHTML;
-                        
-                        // Remove all icons, images, and unnecessary elements
-                        const icons = tempDiv.querySelectorAll('i, svg, img, .avatar-circle, .avatar, .icon');
-                        icons.forEach(icon => icon.remove());
-                        
-                        // Remove any action buttons or links that shouldn't be printed
-                        const actionButtons = tempDiv.querySelectorAll('.action-btn, .btn, button');
-                        actionButtons.forEach(btn => btn.remove());
-                        
-                        // Get the simplified table HTML
-                        tableHTML = tempDiv.innerHTML;
-                    }
-                    
-                    // Create the print content
-                    printWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>${reportType} Discharge Report</title>
-                            <style>
-                                body { 
-                                    font-family: Arial, sans-serif; 
-                                    padding: 30px; 
-                                    max-width: 1000px; 
-                                    margin: 0 auto;
-                                }
-                                .print-header { 
-                                    text-align: center; 
-                                    margin-bottom: 30px; 
-                                }
-                                .print-header h1 { 
-                                    font-size: 24px; 
-                                    font-weight: bold; 
-                                    margin-bottom: 5px; 
-                                }
-                                .print-header p { 
-                                    font-size: 14px; 
-                                    color: #555; 
-                                    margin-bottom: 5px; 
-                                }
-                                table {
-                                    width: 100%;
-                                    border-collapse: collapse;
-                                    margin-top: 20px;
-                                    margin-bottom: 30px;
-                                }
-                                th, td {
-                                    border: 1px solid #ddd;
-                                    padding: 10px;
-                                    text-align: left;
-                                    font-size: 12px;
-                                }
-                                th {
-                                    background-color: #f2f2f2;
-                                    font-weight: bold;
-                                }
-                                /* Convert badges to simple text */
-                                .badge {
-                                    display: inline;
-                                    padding: 0;
-                                    font-size: inherit;
-                                    font-weight: normal;
-                                    line-height: inherit;
-                                    text-align: inherit;
-                                    white-space: inherit;
-                                    vertical-align: inherit;
-                                    border-radius: 0;
-                                    background-color: transparent !important;
-                                }
-                                /* Reset all badge colors to default text color */
-                                .bg-light-success, .bg-light-danger, .bg-light-primary, .bg-light-warning,
-                                .bg-success, .bg-danger, .bg-primary, .bg-warning,
-                                .text-success, .text-danger, .text-primary, .text-warning {
-                                    color: inherit !important;
-                                    background-color: transparent !important;
-                                }
-                                /* Hide unnecessary elements */
-                                .avatar-circle, .avatar, .icon, svg, i, img, .action-btn {
-                                    display: none !important;
-                                }
-                                /* Remove link styling */
-                                a {
-                                    text-decoration: none;
-                                    color: inherit;
-                                }
-                                /* Print buttons */
-                                .no-print {
-                                    text-align: center;
-                                    margin-top: 30px;
-                                    margin-bottom: 20px;
-                                }
-                                /* Reset button styles for print buttons */
-                                .no-print .btn {
-                                    display: inline-block !important;
-                                    font-weight: 500 !important;
-                                    text-align: center !important;
-                                    vertical-align: middle !important;
-                                    user-select: none !important;
-                                    padding: 0.65rem 1rem !important;
-                                    font-size: 1rem !important;
-                                    line-height: 1.5 !important;
-                                    border-radius: 0.42rem !important;
-                                    cursor: pointer !important;
-                                    margin: 0 5px !important;
-                                }
-                                .no-print .btn-primary {
-                                    color: #fff !important;
-                                    background-color: #3699FF !important;
-                                    border: 1px solid #3699FF !important;
-                                }
-                                .no-print .btn-secondary {
-                                    color: #3F4254 !important;
-                                    background-color: #E4E6EF !important;
-                                    border: 1px solid #E4E6EF !important;
-                                }
-                                .print-footer { 
-                                    text-align: center; 
-                                    margin-top: 30px; 
-                                    font-size: 12px; 
-                                    color: #777; 
-                                    padding-bottom: 20px;
-                                }
-                                @media print {
-                                    body { 
-                                        padding: 15px; 
-                                        margin: 0 auto;
-                                    }
-                                    .no-print {
-                                        display: none !important;
-                                    }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="print-header">
-                                <h1>{{env('APP_NAME')}}</h1>
-                                <h2>${reportType} Discharge Report</h2>
-                                <p>Period: ${dateRange}</p>
-                                <p>Generated on: ${new Date().toLocaleString()}</p>
-                            </div>
-                            
-                            <div id="print-content">
-                                ${tableFound ? tableHTML : `<p>No ${reportType} discharge records found</p>`}
-                            </div>
-                            
-                            <div class="print-footer">
-                                <p>© ${new Date().getFullYear()} Hospital Management System</p>
-                            </div>
-                            
-                            <div class="text-center mt-4 no-print">
-                                <button type="button" class="btn btn-primary btn-print" onclick="window.print();" style="display: inline-block !important;">
-                                    Print Now
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-close" onclick="window.close();" style="display: inline-block !important;">
-                                    Close
-                                </button>
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    
-                    // Finish and print
-                    printWindow.document.close();
-                    printWindow.focus();
-                    
-                    // Add a small delay before printing to ensure content is fully loaded
-                    setTimeout(function() {
-                        printWindow.print();
-                    }, 500);
-                    
-                } catch (e) {
-                    console.error('Error printing report:', e);
-                    alert('Error printing report: ' + e.message);
-                    if (printWindow) printWindow.close();
-                }
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Helper: Get text safely
+    function getText(selector, fallback = '') {
+        const el = document.querySelector(selector);
+        return el ? el.textContent.trim().replace(/\s+/g, ' ') : fallback;
+    }
+
+    // Get active tab and table data
+    function getReportData() {
+        const dateRange = getText('.date-range-display', 'All Time');
+        const activeTab = document.querySelector('.nav-link.active');
+        const isOpd = activeTab && (activeTab.textContent.includes('OPD') || activeTab.getAttribute('href') === '#opd-tab');
+        const reportType = isOpd ? 'OPD' : 'IPD';
+        const tabId = isOpd ? 'opd-tab' : 'ipd-tab';
+
+        // Try multiple ways to get the table
+        let table = document.querySelector(`#${tabId} table`) || 
+                    document.querySelector('.tab-pane.active table') ||
+                    document.querySelector('table');
+
+        if (!table) return { dateRange, reportType, rows: [], headers: [], hasData: false };
+
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
+            return Array.from(tr.querySelectorAll('td')).map(td => {
+                // Clean cell: remove icons, buttons, avatars
+                const clone = td.cloneNode(true);
+                clone.querySelectorAll('i, svg, img, button, .btn, .avatar, .action-btn').forEach(el => el.remove());
+                return clone.textContent.trim().replace(/\s+/g, ' ');
             });
         });
-    </script>
+
+        return { dateRange, reportType, headers, rows, hasData: rows.length > 0 };
+    }
+
+    // 1. PRINT REPORT
+    $('#printReport').on('click', function () {
+        const data = getReportData();
+        const win = window.open('', '_blank');
+
+        const tableRows = data.rows.map(row => 
+            `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+        ).join('');
+
+        const tableHTML = data.hasData ? `
+            <table border="1" style="width:100%; border-collapse:collapse; margin-top:20px;">
+                <thead style="background:#f8f9fa;">
+                    <tr>${data.headers.map(h => `<th style="padding:12px; text-align:left;">${h}</th>`).join('')}</tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+        ` : `<p style="text-align:center; color:#999; font-size:18px;">No ${data.reportType} discharge records found for the selected period.</p>`;
+
+        win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${data.reportType} Discharge Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; margin: 0; }
+                .header { text-align: center; margin-bottom: 30px; }
+                h1 { font-size: 28px; color: #333; margin: 0; }
+                h2 { font-size: 22px; color: #555; margin: 10px 0; }
+                .info { color: #666; font-size: 14px; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                th { background: #f8f9fa; font-weight: bold; }
+                tr:nth-child(even) { background: #f9f9f9; }
+                .footer { text-align: center; margin-top: 50px; color: #777; font-size: 12px; }
+                .no-print { text-align: center; margin: 30px 0; }
+                .btn { padding: 10px 20px; margin: 0 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+                .btn-primary { background: #3699FF; color: white; }
+                .btn-secondary { background: #E4E6EF; color: #3F4254; }
+                @media print { .no-print { display: none; } body { padding: 10px; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>{{ env('APP_NAME') }}</h1>
+                <h2>${data.reportType} Discharge Report</h2>
+                <p class="info"><strong>Period:</strong> ${data.dateRange}</p>
+                <p class="info"><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+
+            ${tableHTML}
+
+            <div class="footer">
+                <p>© ${new Date().getFullYear()} Hospital Management System. All rights reserved.</p>
+            </div>
+
+            <div class="no-print">
+                <button class="btn btn-primary" onclick="window.print()">Print Now</button>
+                <button class="btn btn-secondary" onclick="window.close()">Close</button>
+            </div>
+        </body>
+        </html>
+        `);
+
+        win.document.close();
+        setTimeout(() => win.print(), 500);
+    });
+
+    // 2. EXPORT TO PDF
+    $('#exportPDF').on('click', function () {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+        const data = getReportData();
+
+        doc.setFontSize(20);
+        doc.text(`${data.reportType} Discharge Report`, 148, 20, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text(`Period: ${data.dateRange}`, 148, 30, { align: 'center' });
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 148, 37, { align: 'center' });
+
+        if (data.hasData) {
+            doc.autoTable({
+                head: [data.headers],
+                body: data.rows,
+                startY: 50,
+                theme: 'grid',
+                styles: { fontSize: 9, cellPadding: 4 },
+                headStyles: { fillColor: [54, 153, 255], textColor: 255 },
+                alternateRowStyles: { fillColor: [248, 249, 250] }
+            });
+        } else {
+            doc.text('No records found', 148, 60, { align: 'center' });
+        }
+
+        doc.save(`${data.reportType}_Discharge_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+    });
+
+    // 3. EXPORT TO EXCEL
+    $('#exportExcel').on('click', function () {
+        const data = getReportData();
+        const wb = XLSX.utils.book_new();
+
+        const wsData = [
+            [`${data.reportType} Discharge Report`],
+            [`Period: ${data.dateRange}`],
+            [`Generated: ${new Date().toLocaleString()}`],
+            [],
+            data.headers
+        ];
+
+        if (data.hasData) {
+            data.rows.forEach(row => wsData.push(row));
+        } else {
+            wsData.push(['No records found']);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, 'Discharge Report');
+        XLSX.writeFile(wb, `${data.reportType}_Discharge_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+    });
+
+    // 4. EXPORT TO CSV
+    $('#exportCSV').on('click', function () {
+        const data = getReportData();
+        let csv = `data:text/csv;charset=utf-8,${data.reportType} Discharge Report\n`;
+        csv += `Period: ${data.dateRange}\n`;
+        csv += `Generated: ${new Date().toLocaleString()}\n\n`;
+        csv += data.headers.join(',') + '\n';
+
+        if (data.hasData) {
+            data.rows.forEach(row => {
+                csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+            });
+        } else {
+            csv += 'No records found\n';
+        }
+
+        const link = document.createElement('a');
+        link.setAttribute('href', encodeURI(csv));
+        link.setAttribute('download', `${data.reportType}_Discharge_Report_${new Date().toISOString().slice(0,10)}.csv`);
+        link.click();
+    });
+});
+</script>
 @endsection

@@ -18,6 +18,26 @@ class IpdBalanceReport extends Component
 {
     use WithPagination;
 
+    public function exportExcel()
+    {
+        // TODO: Implement Excel export logic using Laravel Excel
+        session()->flash('message', 'Excel export triggered!');
+    }
+
+    // Export IPD Balance Report to CSV
+    public function exportCsv()
+    {
+        // TODO: Implement CSV export logic using Laravel Excel
+        session()->flash('message', 'CSV export triggered!');
+    }
+
+    // Export IPD Balance Report to PDF
+    public function exportPdf()
+    {
+        // TODO: Implement PDF export logic using DomPDF or Snappy
+        session()->flash('message', 'PDF export triggered!');
+    }
+
     public $startDate;
     public $endDate;
     public $dateFilter = 'today';

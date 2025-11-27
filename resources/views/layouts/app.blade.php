@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-
 <head>
     <meta charset="UTF-8">
     <title>@yield('title') | {{ getAppName() }}</title>
@@ -25,28 +24,27 @@
         <link href="{{ mix('assets/css/plugins.css') }}" rel="stylesheet" type="text/css" />
     @endif
 
-    {{--    @livewireStyles --}}
-    {{--    <script src="{{ asset('livewire/livewire.css') }}"></script> --}}
     @yield('css')
     @yield('page_css')
+
     <style>
-        body, .nav-tabs .nav-item .nav-link, .nav-tabs .nav-item .nav-link, .table.table-striped, .btn, .badge, .form-label, .select2-container--bootstrap-5 .select2-selection, .form-control, .nav-link, .fs-6 {
+        body, .nav-tabs .nav-item .nav-link, .table.table-striped, .btn, .badge, .form-label, .select2-container--bootstrap-5 .select2-selection, .form-control, .nav-link, .fs-6 {
             font-size: 11px !important;
         }
-          /* Customize the modal backdrop */
         .overlay {
-            background-color: rgba(0, 0, 0, 0.2) !important; /* Change the backdrop color and opacity */
+            background-color: rgba(0, 0, 0, 0.2) !important;
         }
-
     </style>
-    {{--    <link href="{{ asset('css/pages.css') }}" rel="stylesheet" type="text/css"/> --}}
+
     <link href="{{ mix('assets/css/custom.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/pathology-report.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/radiology-report.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('css/pagination-custom.css') }}" rel="stylesheet" type="text/css" />
-    {{--    <link rel="stylesheet" href="{{ asset('assets/css/livewire-table.css') }}"> --}}
+    <link href="{{ asset('css/menu-enhanced.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('css/header-enhanced.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('css/footer-enhanced.css') }}" rel="stylesheet" type="text/css" />
+
     @routes
-    {{--        @livewireScripts --}}
     <script src="{{ asset('livewire/livewire.js') }}" data-turbolinks-eval="false" data-turbo-eval="false"></script>
     @include('livewire.livewire-turbo')
     <script src="{{ asset('js/turbo.js') }}" data-turbolinks-eval="false" data-turbo-eval="false"></script>
@@ -57,30 +55,28 @@
     <script src="https://npmcdn.com/flatpickr@4.5.2/dist/l10n"></script>
 
     @yield('page_scripts')
+    @yield('scripts')
+
     <script>
-        {{-- let defaultImage = "{{ asset('assets/img/avatar.png') }}"; --}}
-            // const defaultImageUrl = '';
-            (function($) {
-                $.fn.button = function(action) {
-                    if (action === 'loading' && this.data('loading-text')) {
-                        this.data('original-text', this.html()).html(this.data('loading-text')).prop('disabled',
-                            true)
-                    }
-                    if (action === 'reset' && this.data('original-text')) {
-                        this.html(this.data('original-text')).prop('disabled', false)
-                    }
+        (function($) {
+            $.fn.button = function(action) {
+                if (action === 'loading' && this.data('loading-text')) {
+                    this.data('original-text', this.html()).html(this.data('loading-text')).prop('disabled', true)
                 }
-                $('#overlay-screen-lock').hide()
-            }(jQuery))
+                if (action === 'reset' && this.data('original-text')) {
+                    this.html(this.data('original-text')).prop('disabled', false)
+                }
+            }
+            $('#overlay-screen-lock').hide()
+        }(jQuery))
+
         $(document).ready(function() {
             $('.alert').delay(5000).slideUp(300)
         })
-
         $('.alert').delay(5000).slideUp(300, function() {
             $('.alert').attr('style', 'display:none')
         })
     </script>
-    @yield('scripts')
 </head>
 
 <body>
@@ -101,14 +97,14 @@
                     @include('layouts.footer')
                 </div>
             </div>
-
             @include('user_profile.edit_profile_modal')
             @include('user_profile.change_password_modal')
         </div>
+
         {{ Form::hidden('defaultImage', asset('assets/img/avatar.png'), ['class' => 'defaultImage']) }}
         {{ Form::hidden('defaultImageUrl', '', ['class' => 'defaultImageUrl']) }}
         {{ Form::hidden('profileUrl', url('profile'), ['class' => 'profileUrl']) }}
-        {{ Form::hidden('profileUpdateUrl', url('profile-update'), ['class' => 'profileUpdateUrl']) }}
+        {{ Form::hidden('profileUpdateUrl', 'profile-update', ['class' => 'profileUpdateUrl']) }}
         {{ Form::hidden('changePasswordUrl', url('change-password'), ['class' => 'changePasswordUrl']) }}
         {{ Form::hidden('loggedInUserId', getLoggedInUserId(), ['class' => 'loggedInUserId']) }}
         {{ Form::hidden('updateLanguageURL', url('update-language'), ['class' => 'updateLanguageURL']) }}
@@ -132,6 +128,9 @@
         {{ Form::hidden('hasBeenDeletedVariable', __('messages.common.has_been_deleted'), ['class' => 'hasBeenDeletedVariable']) }}
         {{ Form::hidden('okVariable', __('messages.common.ok'), ['class' => 'okVariable']) }}
     </div>
-</body>
 
+    <!-- THIS IS THE CRITICAL LINE — NOW IN THE CORRECT PLACE -->
+    @stack('scripts')
+
+</body>
 </html>

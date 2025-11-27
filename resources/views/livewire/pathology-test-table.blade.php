@@ -18,7 +18,7 @@
     @endif
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Pathology Tests</h4>
+        <h4 class="mb-0">Laboratory Investigations</h4>
         @if(!$ipdId)
         <button wire:click="create" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>New Test Request

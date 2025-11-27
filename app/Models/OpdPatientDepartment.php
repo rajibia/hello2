@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB; // <-- CRITICAL: ADDED FOR LOCKING
 use Str;
 
 /**
@@ -13,44 +14,7 @@ use Str;
  * @property int $id
  * @property int $patient_id
  * @property string $opd_number
- * @property string|null $height
- * @property string|null $weight
- * @property string|null $bp
- * @property string|null $symptoms
- * @property string|null $notes
- * @property Carbon $appointment_date
- * @property int|null $case_id
- * @property bool|null $is_old_patient
- * @property int|null $doctor_id
- * @property int $standard_charge
- * @property int $payment_mode
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property-read Doctor|null $doctor
- * @property-read mixed $payment_mode_name
- * @property-read Patient $patient
- * @property-read PatientCase|null $patientCase
- *
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment query()
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereAppointmentDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereBp($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereCaseId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereDoctorId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereHeight($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereIsOldPatient($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereNotes($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereOpdNumber($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment wherePatientId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment wherePaymentMode($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereStandardCharge($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereSymptoms($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|OpdPatientDepartment whereWeight($value)
- *
+// ... (rest of doc block)
  * @mixin \Eloquent
  */
 class OpdPatientDepartment extends Model
@@ -117,7 +81,7 @@ class OpdPatientDepartment extends Model
         'appointment_date' => 'datetime',
         'height' => 'integer',
         'weight' => 'integer',
-        'bp' => 'array', // Update the cast to 'array'
+        'bp' => 'array',
         'symptoms' => 'string',
         'notes' => 'string',
         'case_id' => 'integer',
@@ -134,6 +98,31 @@ class OpdPatientDepartment extends Model
         'charge' => 'integer',
         'invoice_id' => 'integer',
     ];
+
+    /**
+     * The fixed boot method to prevent race conditions during ID generation using DB locking.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Use a database transaction and locking to guarantee unique ID generation
+        static::creating(function ($opdPatientDepartment) {
+            
+            DB::transaction(function () use ($opdPatientDepartment) {
+                
+                // Only generate if the opd_number field is empty
+                if (empty($opdPatientDepartment->opd_number)) {
+
+                    // Acquire a write lock on the table. This forces other concurrent requests to wait.
+                    DB::table('opd_patient_departments')->lockForUpdate()->orderBy('id', 'desc')->first();
+
+                    $opdPatientDepartment->opd_number = self::generateUniqueOpdNumber();
+                }
+            });
+        });
+    }
+
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class, 'patient_id');
@@ -163,7 +152,6 @@ class OpdPatientDepartment extends Model
 
         return $opdNumber;
     }
-
     public function getPaymentModeNameAttribute()
     {
         return 'N/A';

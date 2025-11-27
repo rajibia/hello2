@@ -464,6 +464,19 @@ Route::middleware('auth', 'verified', 'xss', 'checkUserStatus')->group(function 
         
     });
 
+
+
+
+    // Assuming you have a route group for all reports, you would add these inside it
+// Example: Route::prefix('reports')->name('reports.')->group(function () { ... });
+
+// Laboratory Reports
+Route::get('laboratory_attendance', [ReportsController::class, 'laboratoryAttendance'])->name('reports.laboratory_attendance');
+Route::get('laboratory_investigation', [ReportsController::class, 'laboratoryInvestigation'])->name('reports.laboratory_investigation');
+
+
+
+
    Route::middleware(['module.permission:beds,view'])->group(function () {   
         Route::get('beds/{bed}', [BedController::class, 'show'])->where('bed', '[0-9]+');
     });
@@ -490,6 +503,11 @@ Route::middleware('auth', 'verified', 'xss', 'checkUserStatus')->group(function 
             ->middleware('modules');
     });
 	
+
+
+Route::get('ipds/get-patient-cases', [IpdPatientDepartmentController::class, 'getPatientCases'])->name('ipds.get-patient-cases');
+
+
 	Route::middleware(['module.permission:patients,view'])->group(function () {  
 		Route::get('patients', [PatientController::class, 'index'])
 				->name('patients.index')
@@ -1089,6 +1107,7 @@ Route::middleware('auth', 'verified', 'xss', 'checkUserStatus')->group(function 
         Route::get('reports/monthly-outpatient-morbidity', [ReportsController::class, 'monthlyOutpatientMorbidityReport'])->name('reports.monthly-outpatient-morbidity');
         Route::get('reports/patient-statement', [ReportsController::class, 'patientStatementReport'])->name('reports.patient-statement');
         Route::get('reports/transaction', [ReportsController::class, 'transactionReport'])->name('reports.transaction');
+        Route::post('reports/transaction/export-pdf', [ReportsController::class, 'exportTransactionPDF'])->name('reports.transaction.export-pdf');
         Route::get('reports/opd-balance', [ReportsController::class, 'opdBalanceReport'])->name('reports.opd-balance');
         Route::get('reports/ipd-balance', [ReportsController::class, 'ipdBalanceReport'])->name('reports.ipd-balance');
         Route::get('reports/pharmacy-bill', [ReportsController::class, 'pharmacyBillReport'])->name('reports.pharmacy-bill');
@@ -1184,6 +1203,8 @@ Route::middleware('auth', 'verified', 'xss', 'checkUserStatus')->group(function 
             ->middleware('modules');
 	});		
 			
+
+
     Route::middleware(['module.permission:sms,view'])->group(function () {
         //Sms Rout
         Route::get('sms', [SmsController::class, 'index'])
@@ -1202,6 +1223,8 @@ Route::middleware('auth', 'verified', 'xss', 'checkUserStatus')->group(function 
 			Route::get('pathology-tests', [PathologyTestController::class, 'index'])
 				->name('pathology.test.index')
 				->middleware('modules');
+
+                
 			Route::get('pathology-tests/create', [PathologyTestController::class, 'create'])->name('pathology.test.create');
 			Route::post('pathology-tests', [PathologyTestController::class, 'store'])->name('pathology.test.store');
 			Route::get('pathology-tests/{pathologyTest}', [PathologyTestController::class, 'show'])->name('pathology.test.show');
@@ -1222,6 +1245,25 @@ Route::middleware('auth', 'verified', 'xss', 'checkUserStatus')->group(function 
 			Route::get('pathology-test/cases/{patientId}', [PathologyTestController::class, 'getPatientCaseDetails'])->name('pathology.test.case.details');
 		});
 	
+
+
+
+
+        Route::post('opd/management-plan/store/{opdPatientDepartment}', [OpdPatientDepartmentController::class, 'storeManagementPlan'])
+    ->name('opd.management.store');
+
+
+
+
+Route::get('opd/{opdId}/completed-pathology-tests', [PathologyTestController::class, 'getPatientCompletedPathologyTests'])
+    ->name('opd.completed-pathology-tests');
+
+// You may also want a route to fetch a single report detail for the modal viewing:
+Route::get('pathology-tests/{pathologyTest}/modal-details', [PathologyTestController::class, 'showModal'])->name('pathology-tests.show-modal');
+
+
+
+
 	Route::middleware(['module.permission:radiology-tests-templates,view'])->group(function () {
 		Route::get('radiology-tests-templates/create', [RadiologyTestTemplateController::class, 'createTemplate'])->name('radiology.test.templates.create');
         Route::get('radiology-tests-templates/preview', [RadiologyTestTemplateController::class, 'previewTemplate'])->name('radiology.test.template.preview');

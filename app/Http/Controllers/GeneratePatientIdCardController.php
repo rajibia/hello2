@@ -38,7 +38,9 @@ class GeneratePatientIdCardController extends AppBaseController
 
     public function show($uniqueId)
     {
-        $patients = Patient::with(['patientUser','address','idCardTemplate'])->where('patient_unique_id',$uniqueId)->first();
+        $patients = Patient::with(['patientUser','address','idCardTemplate'])
+            ->where('patient_unique_id',$uniqueId)
+            ->first();
 
         return $this->sendResponse($patients, 'Data retrieved successfully.');
     }
@@ -52,26 +54,70 @@ class GeneratePatientIdCardController extends AppBaseController
 
     public function downloadIdCard($id)
     {
-        $patientIdCardData =  Patient::with(['patientUser','address','idCardTemplate'])->find($id);
+        $patientIdCardData = Patient::with(['patientUser','address','idCardTemplate'])->find($id);
         $patientIdCardTemplateData = PatientIdCardTemplate::find($patientIdCardData->idCardTemplate->id);
+
         $url = route('qrcode.patient.show', $patientIdCardData->patient_unique_id);
         $qrCode = QrCode::size(90)->generate($url);
 
+        /* ---------------------------
+           SAFE IMAGE DOWNLOAD METHOD
+        ---------------------------- */
         $imgUrl = $patientIdCardData->patientUser->image_url;
-        $arrUrl = explode('/', trim($imgUrl))[2];
 
-        if($arrUrl == "ui-avatars.com"){
-            $avatarUrl = "https://ui-avatars.com/api/?name=".$patientIdCardData->patientUser->full_name."&size=100&rounded=true&color=fff&background=fc6369";
-            $avatarData = file_get_contents($avatarUrl);
-            $data['profile'] = base64_encode($avatarData);
-        }else{
-            $avatarUrl = $imgUrl;
-            $avatarData = file_get_contents($avatarUrl);
-            $data['profile'] = base64_encode($avatarData);
+        $data = [];
+
+        if (!$imgUrl) {
+            // fallback image (blank profile)
+            $data['profile'] = null;
+        } else {
+
+            $arrUrl = explode('/', trim($imgUrl));
+
+            if (isset($arrUrl[2]) && $arrUrl[2] == "ui-avatars.com") {
+                $avatarUrl = "https://ui-avatars.com/api/?name=" .
+                    urlencode($patientIdCardData->patientUser->full_name) .
+                    "&size=100&rounded=true&color=fff&background=fc6369";
+            } else {
+                $avatarUrl = $imgUrl;
+            }
+
+            $avatarData = $this->safeDownload($avatarUrl);
+
+            // If download failed, avoid breaking PDF
+            $data['profile'] = $avatarData ? base64_encode($avatarData) : null;
         }
 
-        $pdf = PDF::loadView('generate_patient_id_card.patient_id_card_pdf', compact('patientIdCardData','patientIdCardTemplateData','qrCode','data'));
+        $pdf = PDF::loadView(
+            'generate_patient_id_card.patient_id_card_pdf',
+            compact('patientIdCardData','patientIdCardTemplateData','qrCode','data')
+        );
+
         return $pdf->download($patientIdCardData->patientUser->full_name.'-'.$patientIdCardData->id.'.pdf');
+    }
+
+    /**
+     * Safe file downloader (supports SSL + Catches Errors)
+     */
+    private function safeDownload($url)
+    {
+        if (!$url) return null;
+
+        try {
+            $context = stream_context_create([
+                "ssl" => [
+                    "verify_peer" => false,
+                    "verify_peer_name" => false,
+                ]
+            ]);
+
+            $data = @file_get_contents($url, false, $context);
+
+            return $data ?: null;
+
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     public function generateQrCode($uniqueId)

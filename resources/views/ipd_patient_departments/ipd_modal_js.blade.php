@@ -16,7 +16,7 @@
             });
         });
         
-        // Patient search handling
+        // Patient search handling (Keep your existing search and select logic)
         $('#patient_search').on('input', function() {
             var query = $(this).val();
             if (query.length > 1) {
@@ -29,7 +29,7 @@
                         resultsBox.empty();
                         
                         if (Object.keys(data).length) {
-                            resultsBox.empty(); // Clear previous results
+                            resultsBox.empty();
                             
                             for (const patientId in data) {
                                 if (data.hasOwnProperty(patientId)) {
@@ -38,8 +38,8 @@
                                     
                                     resultsBox.append(`
                                         <a href="javascript:void(0)" class="list-group-item list-group-item-action patient-result-item" 
-                                           data-id="${patient.id}" 
-                                           data-name="${patient.first_name} ${patient.last_name}">
+                                            data-id="${patient.id}" 
+                                            data-name="${patient.first_name} ${patient.last_name}">
                                             ${patient.first_name} ${patient.last_name}
                                             <span class="text-muted">(${patient.phone || ''}) (Gender: ${gender})</span>
                                         </a>
@@ -137,7 +137,7 @@
         // Bed type change handling
         $('#ipdBedTypeId').on('change', function () {
             const bedTypeId = $(this).val();
-            const patientBedsUrl = $('#createPatientBedsUrl').val();
+            const patientBedsUrl = $('.patientBedsUrl').val(); // Changed to use class from create_modal_content.blade.php
             
             // Reset and disable bed dropdown
             $('#ipdBedId').html('<option value="">{{ __("messages.common.choose") . " " . __("messages.bed_assign.bed") }}</option>').prop('disabled', true);
@@ -202,11 +202,16 @@
             // Reset form fields if needed
             $('#createIpdPatientForm').trigger('reset');
             
-            // Disable charge field by default
+            // Disable charge field by default (This is key: if it's disabled here, we must enable it for submission)
             $('#ipdChargeId').prop('disabled', true);
+            // Assuming ipdDepartmentCaseId is also disabled by default or in blade.php
+            $('#ipdDepartmentCaseId').prop('disabled', true); 
+
+            // Clear validation errors box
+            $('#ipdValidationErrorsBox').addClass('d-none').html('');
         });
         
-        // Modal save button handler
+        // Modal save button handler (This simply triggers the form submission handler below)
         $('#ipdSave').on('click', function() {
             $('#createIpdPatientForm').submit();
         });
@@ -221,49 +226,76 @@
             });
         });
         
-        // Form submission handling
+        // ----------------------------------------------------------------------
+        // 🚀 THE FIXED FORM SUBMISSION HANDLING 🚀
+        // ----------------------------------------------------------------------
         $('#createIpdPatientForm').on('submit', function(e) {
             e.preventDefault();
             
-            // Disable save button to prevent multiple submissions
-            $('#ipdSave').attr('disabled', true).html("<span class='spinner-border spinner-border-sm'></span> Processing...");
+            let form = $(this);
+            let saveButton = $('#ipdSave');
             
-            // Clear previous errors
+            // 1. Disable save button to prevent multiple submissions
+            saveButton.attr('disabled', true).html("<span class='spinner-border spinner-border-sm'></span> Processing...");
+            
+            // 2. Clear previous errors
             $('#ipdValidationErrorsBox').addClass('d-none').html('');
+
+            // 3. CRITICAL FIX: Temporarily ENABLE disabled fields for submission
+            // This ensures the required 'case_id' and 'ipdChargeId' are included in the form data
+            $('#ipdDepartmentCaseId').prop('disabled', false); 
+            $('#ipdChargeId').prop('disabled', false); 
             
             $.ajax({
-                url: '{{ route("ipd.patient.store") }}',
+                url: form.attr('action'), // Use the form's action attribute
                 type: 'POST',
-                data: $(this).serialize(),
+                data: form.serialize(),
+                
                 success: function(result) {
                     if (result.success) {
-                        // Show success message
-                        displaySuccessMessage(result.message);
+                        // Show success message (assuming displaySuccessMessage is defined)
+                        if (typeof displaySuccessMessage === 'function') {
+                            displaySuccessMessage(result.message);
+                        }
                         
                         // Close modal
                         $('#createIpdPatientModal').modal('hide');
                         
-                        // Refresh the Livewire table without page reload
+                        // Refresh the Livewire table
                         if (typeof window.livewire !== 'undefined') {
                             window.livewire.emit('refresh');
                         }
                     }
                 },
+                
                 error: function(result) {
-                    // Re-enable save button
-                    $('#ipdSave').attr('disabled', false).html('{{ __("messages.common.save") }}');
-                    
                     // Display validation errors
-                    if (result.responseJSON.errors) {
+                    if (result.responseJSON && result.responseJSON.errors) {
                         $('#ipdValidationErrorsBox').removeClass('d-none').html('');
                         $.each(result.responseJSON.errors, function(key, value) {
-                            $('#ipdValidationErrorsBox').append('<div class="alert alert-danger">' + value + '</div>');
+                             $('#ipdValidationErrorsBox').append('<div class="alert alert-danger">' + value + '</div>');
                         });
+                        
+                        // Show generic error message (assuming displayErrorMessage is defined)
+                        if (typeof displayErrorMessage === 'function') {
+                            displayErrorMessage('Validation failed. Please check the errors in the box above.');
+                        }
+                    } else if (result.responseJSON && result.responseJSON.message) {
+                        // Handle general server errors
+                        if (typeof displayErrorMessage === 'function') {
+                            displayErrorMessage(result.responseJSON.message);
+                        }
                     }
                 },
+                
                 complete: function() {
-                    // Re-enable save button
-                    $('#ipdSave').attr('disabled', false).html('{{ __("messages.common.save") }}');
+                    // 4. Restore button state (CRITICAL: Runs on success OR error)
+                    saveButton.attr('disabled', false).html('{{ __("messages.common.save") }}');
+                    
+                    // 5. Restore disabled state for fields after submission
+                    // IMPORTANT: Only re-disable if they are meant to be disabled by design
+                    $('#ipdDepartmentCaseId').prop('disabled', true); 
+                    $('#ipdChargeId').prop('disabled', true); 
                 }
             });
         });

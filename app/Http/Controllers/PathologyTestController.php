@@ -174,8 +174,15 @@ class PathologyTestController extends AppBaseController
                 if ($input['create_from_route'] == 'patient') {
                     return redirect(route('patients.show', $input['patient_id']));
                 } elseif ($input['create_from_route'] == 'opd') {
-                    return redirect()->back()->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
+                    // OPD Redirection (Previously Fixed)
+                    return redirect(route('opd.patient.index', ['filter' => 'upcoming']))->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
                 } else if ($input['create_from_route'] == 'ipd') {
+                    // 🎯 IPD REDIRECTION FIX: Redirect to the IPD patient detail page (Screenshot 3)
+                    $ipd_id = $input['ipd_id'] ?? null;
+                    if ($ipd_id) {
+                        return redirect(route('ipd.patient.department.show', $ipd_id))->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
+                    }
+                    // Fallback to previous redirect if ipd_id is missing
                     return redirect()->back()->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
                 } else if ($input['create_from_route'] == 'maternity') {
                     return redirect()->back()->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
@@ -195,6 +202,62 @@ class PathologyTestController extends AppBaseController
 
         return view('pathology_tests.show', compact('pathologyTest'));
     }
+
+
+
+
+
+    // In App\Http\Controllers\PathologyTestController.php
+
+/**
+ * Get all completed pathology tests for a given OPD patient department.
+ * @param int $opdId The ID of the OPD Patient Department.
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function getPatientCompletedPathologyTests(int $opdId)
+{
+    // Find the OPD record
+    $opdPatientDepartment = OpdPatientDepartment::find($opdId);
+
+    if (!$opdPatientDepartment) {
+        return response()->json([
+            'success' => false,
+            'message' => 'OPD record not found.'
+        ], 404);
+    }
+
+    $patientId = $opdPatientDepartment->patient_id;
+
+    // Fetch pathology tests for the patient, only including tests that have results/reports (status is 'completed' or similar)
+    // Assuming a STATUS_COMPLETED constant or a field indicating results are available.
+    // I'll modify this query to focus on tests that have been updated with results,
+    // which usually means the `test_results` field is not null or empty.
+    $pathologyTests = PathologyTest::with(['pathologyTestItems.pathologytesttemplate', 'doctor.doctorUser'])
+        ->where('patient_id', $patientId)
+        ->whereNotNull('test_results') // Assuming test_results being populated means it's completed
+        ->latest()
+        ->get();
+
+    $reports = $pathologyTests->map(function ($test) {
+        $testNames = $test->pathologyTestItems->pluck('pathologytesttemplate.test_name')->filter()->toArray();
+
+        return [
+            'id' => $test->id,
+            'bill_no' => $test->bill_no,
+            'lab_number' => $test->lab_number ?? 'N/A',
+            'test_name' => implode(', ', $testNames),
+            'report_date' => $test->updated_at ? $test->updated_at->format('Y-m-d H:i:s') : 'N/A',
+            'requested_by' => $test->doctor->doctorUser->full_name ?? 'N/A',
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'data' => $reports,
+        'message' => 'Completed pathology tests retrieved successfully.'
+    ]);
+}
+
 
     public function showModal(PathologyTest $pathologyTest)
     {
@@ -217,8 +280,9 @@ class PathologyTestController extends AppBaseController
             'data' => [
                 'id' => $pathologyTest->id,
                 'bill_no' => $pathologyTest->bill_no,
+                'lab_number' => $pathologyTest->lab_number ?? $pathologyTest->bill_no,
                 'patient_name' => strtoupper($pathologyTest->patient->patientUser->full_name ?? 'N/A'),
-                'age' => $age,
+                'age' => $age ?? 0,
                 'sex' => $pathologyTest->patient->patientUser->gender ? 'F' : 'M',
                 'diagnosis' => strtoupper($pathologyTest->diagnosis ?? 'N/A'),
                 'test_requested' => strtoupper(implode(', ', $testNames)),
@@ -260,8 +324,8 @@ class PathologyTestController extends AppBaseController
                     ];
 
                     // If there's form configuration, get the first field's result for backward compatibility
-                    if (!empty($formConfig) && isset($formConfig['fields']) && is_array($formConfig['fields']) && count($formConfig['fields']) > 0) {
-                        $firstField = $formConfig['fields'][0];
+                    if (!empty($formConfig) && isset($formConfig['fields']) && is_array($formConfig['fields']) && count(array_filter($formConfig['fields'])) > 0) {
+                        $firstField = array_filter($formConfig['fields'])[0]; // Use array_filter to skip empty fields that might exist from form structure
                         if (is_array($firstField) && isset($firstField['name'])) {
                             $result = $testResults[$firstField['name']] ?? null;
 

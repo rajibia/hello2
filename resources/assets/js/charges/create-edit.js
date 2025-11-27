@@ -20,6 +20,22 @@ function loadChargeCreateEdit() {
                 "messages.pathology_category.select_charge_category"
             ),
         });
+        
+        // *** FIX: Use direct jQuery change binding for Select2 ***
+        $("#chargeTypeId").on('change', function () {
+            const selectedChargeTypeId = $(this).val();
+            
+            // 1. Load Charge Categories (Existing essential logic)
+            changeChargeCategory("#chargeCategoryId", selectedChargeTypeId);
+            
+            // 2. Generate and set the unique code
+            if (selectedChargeTypeId) {
+                generateCodeForCharge(selectedChargeTypeId, '#code');
+            } else {
+                $('#code').val('');
+            }
+        });
+        // *******************************************************
     }
 
     if (chargeCategoryIdElement.length) {
@@ -31,6 +47,8 @@ function loadChargeCreateEdit() {
             ),
         });
     }
+    
+    // ... [Other edit select2 initializations omitted for brevity, but keep them]
 
     if (editChargeTypeIdElement.length) {
         $("#editChargeTypeId").select2({
@@ -53,10 +71,6 @@ function loadChargeCreateEdit() {
     }
 }
 
-// listenShownBsModal('#add_charges_modal, #edit_charges_modal', function () {
-//         $('#chargeTypeId, #editChargeTypeId:first').focus();
-// });
-
 function changeChargeCategory(selector, id) {
     $.ajax({
         url: $(".changeChargeTypeURL").val(),
@@ -73,14 +87,6 @@ function changeChargeCategory(selector, id) {
         },
     });
 }
-
-listenChange("#chargeTypeId", function () {
-    changeChargeCategory("#chargeCategoryId", $(this).val());
-});
-
-listenChange("#editChargeTypeId", function () {
-    changeChargeCategory("#editChargeCategoryId", $(this).val());
-});
 
 listenSubmit("#addChargesForm", function (event) {
     event.preventDefault();
@@ -105,6 +111,7 @@ listenSubmit("#addChargesForm", function (event) {
         },
     });
 });
+
 
 listenClick(".charge-edit-btn", function (event) {
     if ($(".ajaxCallIsRunning").val()) {
@@ -179,6 +186,8 @@ listenSubmit("#editChargesForm", function (event) {
 listenHiddenBsModal("#add_charges_modal", function () {
     resetModalForm("#addChargesForm", "#chargesErrorsBox");
     $("#chargeTypeId,#chargeCategoryId").val("").trigger("change.select2");
+    // Clear the code field when modal closes
+    $('#code').val(''); 
 });
 
 listenHiddenBsModal("#edit_charges_modal", function () {
