@@ -13,7 +13,11 @@
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('charge_type', __('messages.charge_category.charge_type') . ':', ['class' => 'form-label']) }}
                         <span class="required"></span>
-                        {{ Form::select('charge_type', $chargeTypes, null, ['class' => 'form-select', 'required', 'id' => 'chargeTypeId', 'placeholder' => __('messages.common.choose') . ' ' . __('messages.charge_category.charge_type')]) }}
+                        @php
+                            $allowedNames = ['Procedures', 'Investigations', 'Others'];
+                            $allowedTypes = \App\Models\ChargeType::whereIn('name', $allowedNames)->where('status', 1)->get()->pluck('name', 'id')->toArray();
+                        @endphp
+                        {{ Form::select('charge_type', $allowedTypes, null, ['class' => 'form-select', 'required', 'id' => 'chargeTypeId', 'placeholder' => __('messages.common.choose') . ' ' . __('messages.charge_category.charge_type')]) }}
                     </div>
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('charge_category_id', __('messages.charge.charge_category') . ':', ['class' => 'form-label']) }}
@@ -52,26 +56,20 @@
     </div>
 </div>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+    // Use delegated binding so handler works when modal HTML is injected dynamically
+    $(document).on('change', '#chargeTypeId', function () {
+        let selectedText = $(this).find('option:selected').text().trim();
 
-    // When charge type changes
-    $('#chargeTypeId').on('change', function () {
-
-        let selectedText = $("#chargeTypeId option:selected").text().trim();
-
-        if(selectedText === "" || selectedText === null){
-            $('#code').val("");
+        if (selectedText === '' || selectedText === null) {
+            $('#code').val('');
             return;
         }
 
-        // Create code from charge type text
-        let prefix = selectedText.substring(0, 3).toUpperCase(); // first 3 letters
-        let randomNumber = Math.floor(100 + Math.random() * 900); // 3-digit random number
-
-        let finalCode = prefix + "-" + randomNumber;
+        // Create code from charge type text (first 3 letters + 3-digit random)
+        let prefix = selectedText.substring(0, 3).toUpperCase();
+        let randomNumber = Math.floor(100 + Math.random() * 900);
+        let finalCode = prefix + '-' + randomNumber;
 
         $('#code').val(finalCode);
     });
-
-});
 </script>

@@ -3,7 +3,7 @@
     <td class="text-center pt-5 item-number">1</td>
     <td class="table__item-desc">
         <select class="form-select chargeId" name="charge_id[]" placeholder="<?php echo __('messages.common.choose') . ' ' . __('messages.charges') ?>" id="enquiry-charge-id_{{:uniqueId}}" data-id="{{:uniqueId}}" required>
-            <option selected="selected" value=0"><?php echo __('messages.common.choose') . ' ' . __('messages.charges') ?></option>
+            <option selected="selected" value=0"<?php echo __('messages.common.choose') . ' ' . __('messages.charges') ?></option>
             {{for charges}}
                 <option value="{{:key}}">{{:value}}</option>
             {{/for}}
@@ -16,7 +16,7 @@
         <input class="form-control qty" required="" name="quantity[]" type="number" min="1" value="1" placeholder="<?php echo __('messages.invoice.qty') ?>">
     </td>
     <td class="text-center">
-        <input class="form-control price-input price" required="" name="price[]" type="text" placeholder="<?php echo __('messages.invoice.price') ?>">
+        <input class="form-control price-input price" required="" name="price[]" type="text" placeholder="<?php echo __('messages.invoice.price') ?>" readonly>
     </td>
     <td class="amount text-center item-total pt-5 text-nowrap">
     0.00

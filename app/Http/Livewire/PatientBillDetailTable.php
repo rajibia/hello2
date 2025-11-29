@@ -71,7 +71,6 @@ class PatientBillDetailTable extends LivewireTableComponent
             Column::make(__('messages.bill.bill_date'), 'bill_date')->view('patients.patient_bill_column.bill_date'),
             Column::make(__('messages.bill.amount'), 'amount')->view('patients.patient_bill_column.amount'),
             $data,
-
         ];
     }
 
@@ -133,6 +132,22 @@ class PatientBillDetailTable extends LivewireTableComponent
             ->union($pathologyBills)
             ->union($radiologyBills)
             ->union($maternityBills);
+
+        // Include OPD invoices (so invoice-based bills appear here too)
+        $invoiceBills = DB::table('invoices')
+            ->where('patient_id', $this->patientId)
+            ->select(
+                'id',
+                'invoice_id as bill_number',
+                DB::raw('DATE(invoice_date) as bill_date'),
+                // show outstanding amount (amount - COALESCE(paid_amount,0)) if paid_amount stored as numeric
+                DB::raw('(amount - COALESCE(paid_amount,0)) as amount'),
+                DB::raw("'OPD Bill' as bill_type"),
+                'created_at',
+                'updated_at'
+            );
+
+        $unionQuery = $unionQuery->union($invoiceBills);
 
         // Convert to Eloquent Builder by using Bill model with fromSub properly
         return Bill::query()->fromSub($unionQuery, 'bills');

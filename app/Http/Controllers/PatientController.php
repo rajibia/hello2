@@ -123,9 +123,9 @@ class PatientController extends AppBaseController
         // Validate the request
         $request->validate([
             'phone' => 'required|string',
-            'guardian_name' => 'required|string',
-            'guardian_phone' => 'required|string',
-            'guardian_relation' => 'required|string',
+            'guardian_name' => 'nullable|string',
+            'guardian_phone' => 'nullable|string',
+            'guardian_relation' => 'nullable|string',
             // 'charge_id' => 'required|exists:charges,id',
             'date' => 'required|date',
         ]);

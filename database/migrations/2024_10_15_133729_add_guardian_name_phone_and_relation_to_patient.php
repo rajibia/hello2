@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::table('patients', function (Blueprint $table) {
             // add guardian's name, phone number and relationship tot he patient
-            $table->string('guardian_name');
-            $table->string('guardian_phone');
-            $table->string('guardian_relation');
+            $table->string('guardian_name')->nullable();
+            $table->string('guardian_phone')->nullable();
+            $table->string('guardian_relation')->nullable();
         });
     }
 

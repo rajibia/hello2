@@ -20,31 +20,33 @@
         <h1>Pharmacy Bill Report</h1>
         <div class="d-flex align-items-center gap-2">
 
-            <!-- EXPORT BUTTONS (Beautiful & Permanent) -->
-            <div class="btn-group me-3">
-                <button id="exportExcel" class="btn btn-success" title="Export to Excel">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
-                <button id="exportCsv" class="btn btn-info" title="Export to CSV">
-                    <i class="fas fa-file-csv"></i> CSV
-                </button>
-                <button id="exportPdf" class="btn btn-danger" title="Export to PDF">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-            </div>
+       
 
             <!-- PRINT -->
             <button id="printReport" class="btn btn-primary">
                 <i class="fas fa-print"></i> Print
             </button>
 
-            <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
+            <!-- Export Buttons -->
+            <div class="btn-group ms-2" role="group">
+                <button id="exportPdf" class="btn btn-danger btn-sm">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button id="exportExcel" class="btn btn-success btn-sm">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button id="exportCsv" class="btn btn-info btn-sm">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+            </div>
+
+            <a href="{{ route('reports.index') }}" class="btn btn-outline-primary ms-2">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
     </div>
 
-    <!-- LIVE SEARCH -->
+
     <div class="mb-5">
         <label for="liveSearch" class="form-label fw-bold">Live Search</label>
         <input type="text" id="liveSearch" class="form-control form-control-lg"
@@ -72,6 +74,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
 
+<script src="{{ asset('assets/js/reports/export-utility.js') }}"></script>
+
 <script>
 let table = null;
 
@@ -81,145 +85,49 @@ function initializeDataTable() {
 
     if (!tableEl) return;
 
-    // Prevent double initialization
     if ($.fn.DataTable.isDataTable(tableEl)) {
         table = $(tableEl).DataTable();
         return;
     }
 
     if (table) {
-        table.destroy();
+        try { table.destroy(); } catch (e) {}
         table = null;
     }
 
     setTimeout(() => {
-        table = $(tableEl).DataTable({
-            dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'excelHtml5',
-                    text: 'Excel',
-                    className: 'd-none', // Hidden real button
-                    exportOptions: { columns: ':not(:last-child)' }
-                },
-                {
-                    extend: 'csvHtml5',
-                    text: 'CSV',
-                    className: 'd-none',
-                    exportOptions: { columns: ':not(:last-child)' }
-                },
-                {
-                    extend: 'pdfHtml5',
-                    text: 'PDF',
-                    className: 'd-none',
-                    orientation: 'landscape',
-                    exportOptions: { columns: ':not(:last-child)' },
-                    customize: function(doc) {
-                        // Remove Actions column from PDF
-                        doc.content[1].table.body.forEach(row => row.pop());
-                    }
-                }
-            ],
-            pageLength: 25,
-            order: [[0, 'desc']],
-            searching: true,
-            destroy: true,
-            columnDefs: [
-                { targets: '_all', defaultContent: '' },
-                { targets: -1, className: 'actions-column' } // Mark last column as actions
-            ]
-        });
-
-        // Connect your beautiful custom buttons (they work FOREVER)
-        $('#exportExcel').off('click').on('click', () => table.buttons(0).trigger());
-        $('#exportCsv')  .off('click').on('click', () => table.buttons(1).trigger());
-        $('#exportPdf')  .off('click').on('click', () => table.buttons(2).trigger());
-
-        // Live Search
-        $('#liveSearch').off('input').on('input', function() {
-            table.search(this.value).draw();
-        });
-
-    }, 400);
+        try {
+            table = ReportExporter.initializeExports($(tableEl), {
+                excludeColumns: [':last-child'],
+                reportTitle: 'Pharmacy Bill Report',
+                fileName: 'pharmacy_bill_report'
+            });
+            ReportExporter.initializeLiveSearch(table);
+            // debug
+            try {
+                console.info('Pharmacy Bill: ReportExporter initialized');
+                const btns = { excel: !!table.button('.buttons-excel').length, csv: !!table.button('.buttons-csv').length, pdf: !!table.button('.buttons-pdf').length };
+                console.info('Pharmacy Bill DT Buttons:', btns);
+            } catch (err) { console.warn('Pharmacy Bill post-init check failed', err); }
+        } catch (e) {
+            console.warn('Error initializing exports for Pharmacy Bill:', e);
+        }
+    }, 300);
 }
 
-// Initialize on page load & every Livewire update
 document.addEventListener('DOMContentLoaded', initializeDataTable);
 document.addEventListener('livewire:load', initializeDataTable);
 document.addEventListener('livewire:update', initializeDataTable);
 
-// Fallback retry (just in case)
+// Try immediately
+initializeDataTable();
+
 let initAttempts = 0;
 const initInterval = setInterval(() => {
     if (initAttempts++ > 12 || table) clearInterval(initInterval);
     initializeDataTable();
 }, 700);
 
-// PRINT REPORT (Perfect & Clean)
-$('#printReport').on('click', function() {
-    const dateRange = $('.date-range-display')?.text().trim().replace(/\s+/g, ' ') || 'All Time';
-
-    const tableEl = document.querySelector('#pharmacyBillWrapper .table-responsive table') ||
-                    document.querySelector('#pharmacyBillWrapper table');
-    if (!tableEl) {
-        alert('No data available to print');
-        return;
-    }
-
-    const temp = tableEl.cloneNode(true);
-
-    // Remove Actions column
-    temp.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
-    temp.querySelectorAll('i, svg, img, button, .btn, .avatar, .action-btn').forEach(el => el.remove());
-
-    const win = window.open('', '_blank');
-    win.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Pharmacy Bill Report</title>
-            <meta charset="utf-8">
-            <style>
-                body { font-family: Arial, sans-serif; padding: 30px; max-width: 1100px; margin: 0 auto; line-height: 1.5; }
-                @page { margin: 15mm; }
-                h1, h2 { text-align: center; margin: 10px 0; }
-                .header p { text-align: center; margin: 8px 0; color: #555; }
-                table { width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 12px; }
-                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-                th { background: #f8f9fa; font-weight: bold; }
-                tr:nth-child(even) { background: #f9f9f9; }
-                .no-print { text-align: center; margin: 40px 0; }
-                .no-print button { padding: 12px 24px; margin: 0 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-                .btn-primary { background: #3699FF; color: white; }
-                .btn-secondary { background: #E4E6EF; color: #3F4254; }
-                @media print { .no-print { display: none; } }
-            </style>
-        </head>
-        <body>
-            <h1>{{ env('APP_NAME') }}</h1>
-            <h2>Pharmacy Bill Report</h2>
-            <div class="header">
-                <p><strong>Period:</strong> ${dateRange}</p>
-                <p><strong>Generated on:</strong> ${new Date().toLocaleString()}</p>
-            </div>
-
-            ${temp.outerHTML || '<p style="text-align:center;">No records found</p>'}
-
-            <div style="text-align:center; color:#777; margin-top:50px; font-size:12px;">
-                <p>&copy; {{ date('Y') }} Hospital Management System. All rights reserved.</p>
-            </div>
-
-            <div class="no-print">
-                <button class="btn-primary" onclick="window.print()">Print Now</button>
-                <button class="btn-secondary" onclick="window.close()">Close</button>
-            </div>
-        </body>
-        </html>
-    `);
-
-    win.document.close();
-    win.focus();
-    setTimeout(() => win.print(), 1000);
-});
+ReportExporter.initializePrint('printReport', '#pharmacyBillWrapper table', 'Pharmacy Bill Report');
 </script>
 @endsection

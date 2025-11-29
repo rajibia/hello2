@@ -27,7 +27,7 @@
     $patientName = strtoupper($ipdPatientDepartment->patient->patientUser->full_name ?? 'N/A');
 
     // Management Plans
-    $managementPlans = \App\Models\ManagementPlan::with('user.doctorUser')
+    $managementPlans = \App\Models\ManagementPlan::with('user')
         ->where('ipd_id', $ipdPatientDepartment->id)
         ->latest()
         ->get();
@@ -375,24 +375,7 @@
                             <i class="fas fa-plus"></i> Add Plan
                         </button>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr><th>Date</th><th>Doctor</th><th>Plan</th></tr>
-                            </thead>
-                            <tbody>
-                                @forelse($managementPlans as $plan)
-                                    <tr>
-                                        <td>{{ $plan->created_at->format('jS M, Y h:i A') }}</td>
-                                        <td>{{ $plan->user->doctorUser->full_name ?? 'Unknown' }}</td>
-                                        <td>{!! nl2br(e($plan->management_plan)) !!}</td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="3" class="text-center text-muted">No management plans recorded yet.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                    <livewire:management-plan-table patientId="{{ $ipdPatientDepartment->patient->id }}" ipdId="{{ $ipdPatientDepartment->id }}" />
                 </div>
             </div>
         </div>
@@ -673,6 +656,50 @@ function printLabReport() {
     win.print();
     win.close();
 }
+</script>
+
+<!-- MANAGEMENT PLAN MODAL -->
+<div class="modal fade" id="addManagementPlanModal" tabindex="-1" aria-labelledby="addManagementPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addManagementPlanModalLabel">Add Management Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            {{ Form::open(['id' => 'addManagementPlanForm']) }}
+            <div class="modal-body">
+                <div class="alert alert-danger d-none hide" id="addManagementPlanErrorsBox"></div>
+                
+                {{ Form::hidden('ipd_id', $ipdPatientDepartment->id) }}
+                {{ Form::hidden('patient_id', $ipdPatientDepartment->patient_id) }}
+
+                <div class="mb-3">
+                    {{ Form::label('management_plan', 'Management Plan:', ['class' => 'form-label']) }}
+                    {{ Form::textarea('management_plan', null, ['class' => 'form-control', 'required', 'rows' => 5, 'placeholder' => 'Enter management plan']) }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                {{ Form::button(__('messages.common.save'), ['type' => 'submit', 'class' => 'btn btn-primary me-3', 'id' => 'btnManagementPlanSave', 'data-loading-text' => "<span class='spinner-border spinner-border-sm'></span> Processing..."]) }}
+                <button type="button" id="btnManagementPlanCancel" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('messages.common.cancel') }}</button>
+            </div>
+            {{ Form::close() }}
+        </div>
+    </div>
+</div>
+
+<script>
+listenSubmit('#addManagementPlanForm', function (event) {
+    event.preventDefault()
+    let loadingButton = jQuery(this).find('#btnManagementPlanSave')
+    loadingButton.button('loading')
+    let data = {
+        formSelector: $(this),
+        url: "{{ route('management_plans.store') }}",
+        type: 'POST'
+    }
+    newRecord(data, loadingButton, '#addManagementPlanModal')
+    loadingButton.attr('disabled', false)
+})
 </script>
 
 {{-- ==== END OF FIX ==== --}}

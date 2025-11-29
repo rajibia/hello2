@@ -20,6 +20,7 @@ class PathologyTestTable extends Component
     public $search = '';
     public $showCreateModal = false;
     public $showEditModal = false;
+    public $showNewRequestModal = false;
     public $showResultsModal = false;
     public $editingTest = null;
     public $selectedTest = null;
@@ -53,6 +54,7 @@ class PathologyTestTable extends Component
     public $form_configuration = [];
     public $available_templates = [];
     public $available_cases = []; // Add this for case dropdown
+    public $incomingTest = null;
 
     protected $rules = [
         'patient_id' => 'required|exists:patients,id',
@@ -64,6 +66,10 @@ class PathologyTestTable extends Component
         'expected_date' => 'nullable|date',
         'selectedTest.lab_number' => 'nullable|string|max:255',
         'diagnosis' => 'nullable|string|max:500',
+    ];
+
+    protected $listeners = [
+        'testRequestCreated' => 'onTestRequestCreated',
     ];
 
     protected $messages = [
@@ -939,10 +945,41 @@ class PathologyTestTable extends Component
             // Accept the test
             $pathologyTest->acceptByLabTechnician();
 
+            // If this was from the incoming modal, close it
+            if ($this->showNewRequestModal && $this->incomingTest && $this->incomingTest->id == $testId) {
+                $this->showNewRequestModal = false;
+                $this->incomingTest = null;
+            }
+
             session()->flash('message', 'Pathology test request accepted successfully. Status changed to In Progress.');
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error accepting test request: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Listener called when a new pathology test is created elsewhere (OPD/IPD).
+     * Shows a modal to lab technicians so they can accept the incoming request.
+     * Payload expected: ['id' => <testId>, 'bill_no' => 'PT000001']
+     */
+    public function onTestRequestCreated($payload)
+    {
+        try {
+            // Only show modal to lab technicians and admins
+            if (!auth()->user() || !auth()->user()->hasRole(['Lab Technician', 'Admin'])) {
+                return;
+            }
+
+            $testId = is_array($payload) && isset($payload['id']) ? $payload['id'] : $payload;
+            $this->incomingTest = PathologyTest::with(['pathologyTestItems.pathologytesttemplate', 'patient.patientUser', 'doctor.doctorUser'])
+                ->find($testId);
+
+            if ($this->incomingTest) {
+                $this->showNewRequestModal = true;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error handling testRequestCreated event: ' . $e->getMessage());
         }
     }
 

@@ -48,5 +48,7 @@ return [
     'submit' => 'Enviar',
     'already_user' => 'Já é usuário?',
     'logins' => 'Conecte-se',
+    'recaptcha_required' => 'Por favor, verifique que você não é um robô.',
+    'recaptcha_failed' => 'Falha na verificação do reCAPTCHA, tente novamente.',
 
 ];

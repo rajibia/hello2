@@ -121,14 +121,14 @@
         <div class="col-md-4">
             <div class="form-group mb-5">
                 {{ Form::label('guardian_name', __('messages.user.name').':', ['class' => 'form-label']) }}
-                {{-- <span class="required"></span> --}}
+                
                 {{ Form::text('guardian_name', $patient->guardian_name, ['class' => 'form-control', 'id' => 'guardianName','tabindex' => '1','placeholder'=>__('messages.user.guardian_name')]) }}
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group mobile-overlapping  mb-5">
                 {{ Form::label('guardian_phone', __('messages.user.phone').':', ['class' => 'form-label']) }}
-                {{-- <span class="required"></span><br> --}}
+                
                 {{ Form::tel('guardian_phone', getCountryCode(), ['class' => 'form-control phoneNumber', 'id' => 'guardianPhoneNumber', 'onkeyup' => 'if (/\D/g.test(this.value)) this.value = this.value.replace(/\D/g,"")', 'tabindex' => '5']) }}
                 {{ Form::hidden('prefix_code',$patient->guardian_phone,['class'=>'prefix_code']) }}
                 <span class="text-success valid-msg d-none fw-400 fs-small mt-2">✓ &nbsp; {{__('messages.valid')}}</span>
@@ -138,7 +138,7 @@
         <div class="col-md-4">
             <div class="form-group mb-5">
                 {{ Form::label('guardian_relation', __('messages.user.relation').':', ['class' => 'form-label']) }}
-                {{-- <span class="required"></span> --}}
+                
                 {{ Form::text('guardian_relation', $patient->guardian_relation, ['class' => 'form-control', 'id' => 'guardianRelation','tabindex' => '1','placeholder'=>__('messages.user.guardian_relation_placeholder')]) }}
             </div>
         </div>

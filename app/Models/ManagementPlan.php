@@ -30,26 +30,16 @@ class ManagementPlan extends Model
         'user_id' => 'integer',
     ];
 
-    /**
-     * Get the OPD patient department this plan belongs to.
-     */
-    public function opdPatientDepartment(): BelongsTo
+    public function opd(): BelongsTo
     {
         return $this->belongsTo(OpdPatientDepartment::class, 'opd_id');
     }
 
-    /**
-     * Get the User (Doctor/Nurse) who created the plan.
-     */
     public function user(): BelongsTo
     {
-        // Assuming your 'users' table is linked via the 'user_id'
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Get the Patient this plan belongs to.
-     */
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class, 'patient_id');

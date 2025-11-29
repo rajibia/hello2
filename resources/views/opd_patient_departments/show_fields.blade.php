@@ -1,18 +1,10 @@
 <?php
-/**
- * =========================================================================
- * !!! WARNING !!! - EMBEDDED BACKEND LOGIC
- * This PHP block fetches and processes the data directly in the Blade file.
- * Ensure your application environment allows this (e.g., models are accessible).
- * =========================================================================
- */
+
 $completedReports = [];
 $managementPlans = [];
 $user = auth()->user(); // Assuming the user is authenticated
 try {
-    // ---------------------------------------------------------------------
-    // 1. Fetch completed pathology tests for the current OPD patient
-    // ---------------------------------------------------------------------
+    
     $reportsRaw = \App\Models\PathologyTest::with(['patient.patientUser', 'doctor.doctorUser', 'template'])
         ->where('opd_id', $opdPatientDepartment->id)
         ->where('status', \App\Models\PathologyTest::STATUS_COMPLETED)
@@ -531,32 +523,7 @@ $completedReportsJSON = json_encode($completedReports);
                         <a href="javascript:void(0)" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#add_management_plan_modal">
                             Add Management Plan
                         </a>
-                        <div class="table-responsive mt-3">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 15%">Date</th>
-                                        <th style="width: 15%">User</th>
-                                        <th>Management Plan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if($managementPlans->isEmpty())
-                                        <tr>
-                                            <td colspan="3" class="text-center">No Management Plans added yet.</td>
-                                        </tr>
-                                    @else
-                                        @foreach ($managementPlans as $plan)
-                                            <tr>
-                                                <td>{{ \Carbon\Carbon::parse($plan->created_at)->translatedFormat('jS M, Y H:i A') }}</td>
-                                                <td>{{ $plan->user->doctorUser->full_name ?? $plan->user->full_name ?? 'N/A' }}</td>
-                                                <td>{!! nl2br(e($plan->management_plan)) !!}</td>
-                                            </tr>
-                                        @endforeach
-                                    @endif
-                                </tbody>
-                            </table>
-                        </div>
+                        <livewire:management-plan-table patientId="{{ $opdPatientDepartment->patient->id }}" opdId="{{ $opdPatientDepartment->id }}" />
                     </div>
 
                     <!-- Notes -->
@@ -597,26 +564,29 @@ $completedReportsJSON = json_encode($completedReports);
 
 <!-- Management Plan Modal -->
 <div class="modal fade" id="add_management_plan_modal" tabindex="-1" aria-labelledby="addManagementPlanModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addManagementPlanModalLabel">Add Management Plan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ route('opd.patient.show', $opdPatientDepartment->id) }}" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="managementPlanNote" class="form-label">Management Plan:</label>
-                        <textarea class="form-control" id="managementPlanNote" name="management_plan" rows="5" required></textarea>
-                    </div>
+            {{ Form::open(['id' => 'addManagementPlanForm']) }}
+            <div class="modal-body">
+                <div class="alert alert-danger d-none hide" id="addManagementPlanErrorsBox"></div>
+                
+                {{ Form::hidden('opd_id', $opdPatientDepartment->id) }}
+                {{ Form::hidden('patient_id', $opdPatientDepartment->patient_id) }}
+
+                <div class="mb-3">
+                    {{ Form::label('management_plan', 'Management Plan:', ['class' => 'form-label']) }}
+                    {{ Form::textarea('management_plan', null, ['class' => 'form-control', 'required', 'rows' => 5, 'placeholder' => 'Enter management plan']) }}
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <input type="hidden" name="management_plan_submit" value="1">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
+            </div>
+            <div class="modal-footer">
+                {{ Form::button(__('messages.common.save'), ['type' => 'submit', 'class' => 'btn btn-primary me-3', 'id' => 'btnManagementPlanSave', 'data-loading-text' => "<span class='spinner-border spinner-border-sm'></span> Processing..."]) }}
+                <button type="button" id="btnManagementPlanCancel" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('messages.common.cancel') }}</button>
+            </div>
+            {{ Form::close() }}
         </div>
     </div>
 </div>
@@ -700,4 +670,19 @@ function printLabReport() {
     win.print();
     win.close();
 }
+</script>
+
+<script>
+listenSubmit('#addManagementPlanForm', function (event) {
+    event.preventDefault()
+    let loadingButton = jQuery(this).find('#btnManagementPlanSave')
+    loadingButton.button('loading')
+    let data = {
+        formSelector: $(this),
+        url: "{{ route('management_plans.store') }}",
+        type: 'POST'
+    }
+    newRecord(data, loadingButton, '#add_management_plan_modal')
+    loadingButton.attr('disabled', false)
+})
 </script>

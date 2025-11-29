@@ -87,7 +87,17 @@ class BillController extends AppBaseController
     }
 
     public function showPatientBills($id){
-        $patient = Patient::find($id);
+        // Eager load related bill collections to ensure counts and lists are available
+        $patient = Patient::with([
+            'patientUser',
+            'medicine_bills',
+            'ipdPatientDepartments',
+            'invoices',
+            'pathologyTests',
+            'radiologyTests',
+            'maternity',
+            'address'
+        ])->find($id);
 
         // Check if patient is a company patient (has company_id)
         if ($patient && $patient->company_id) {
@@ -100,12 +110,49 @@ class BillController extends AppBaseController
     public function paySelectedBills(Request $request, $patientId)
     {
         try {
-            $medicineBillIds = $request->input('medicineBills', []);
-            $ipdBillIds = $request->input('ipdBills', []);
-            $opdBillIds = $request->input('opdBills', []);
-            $pathologyBillIds = $request->input('pathologyBills', []);
-            $radiologyBillIds = $request->input('radiologyBills', []);
-            $maternityBillIds = $request->input('maternityBills', []);
+            $medicineBillInput = $request->input('medicineBills', []);
+            $ipdBillInput = $request->input('ipdBills', []);
+            $opdBillInput = $request->input('opdBills', []);
+            $pathologyBillInput = $request->input('pathologyBills', []);
+            $radiologyBillInput = $request->input('radiologyBills', []);
+            $maternityBillInput = $request->input('maternityBills', []);
+
+            // Normalize inputs: accept either array of IDs or array of {id, amount} objects
+            $normalize = function ($input) {
+                $items = [];
+                foreach ((array)$input as $it) {
+                    if (is_array($it)) {
+                        $id = $it['id'] ?? null;
+                        $amount = isset($it['amount']) ? floatval($it['amount']) : null;
+                    } elseif (is_object($it)) {
+                        $id = $it->id ?? null;
+                        $amount = isset($it->amount) ? floatval($it->amount) : null;
+                    } else {
+                        $id = $it;
+                        $amount = null;
+                    }
+
+                    if ($id !== null) {
+                        $items[] = ['id' => $id, 'amount' => $amount];
+                    }
+                }
+                return $items;
+            };
+
+            $medicineBillItems = $normalize($medicineBillInput);
+            $ipdBillItems = $normalize($ipdBillInput);
+            $opdBillItems = $normalize($opdBillInput);
+            $pathologyBillItems = $normalize($pathologyBillInput);
+            $radiologyBillItems = $normalize($radiologyBillInput);
+            $maternityBillItems = $normalize($maternityBillInput);
+
+            // Extract plain ID arrays for whereIn queries
+            $medicineBillIds = array_map(fn($i) => $i['id'], $medicineBillItems);
+            $ipdBillIds = array_map(fn($i) => $i['id'], $ipdBillItems);
+            $opdBillIds = array_map(fn($i) => $i['id'], $opdBillItems);
+            $pathologyBillIds = array_map(fn($i) => $i['id'], $pathologyBillItems);
+            $radiologyBillIds = array_map(fn($i) => $i['id'], $radiologyBillItems);
+            $maternityBillIds = array_map(fn($i) => $i['id'], $maternityBillItems);
 
             \Log::info('Payment request received', [
                 'patient_id' => $patientId,
@@ -124,86 +171,184 @@ class BillController extends AppBaseController
                 ], 422);
             }
 
-        // Pay and update medicine bills
+        // Pay and update medicine bills (support partial payments)
         if (!empty($medicineBillIds)) {
             $medicineBills = MedicineBill::whereIn('id', $medicineBillIds)
                 ->where('payment_status', 0)
                 ->get();
 
+            $medicineMap = [];
+            foreach ($medicineBillItems as $it) {
+                $medicineMap[$it['id']] = $it['amount'];
+            }
+
             foreach ($medicineBills as $bill) {
-                $bill->payment_status = 1;
-                $bill->paid_amount = $bill->total;
+                $requestedAmount = isset($medicineMap[$bill->id]) ? floatval($medicineMap[$bill->id]) : null;
+                $currentPaid = floatval($bill->paid_amount ?? 0);
+                $remaining = floatval($bill->total ?? 0) - $currentPaid;
+
+                if ($requestedAmount === null) {
+                    // full payment
+                    $bill->paid_amount = $bill->total;
+                    $bill->payment_status = 1;
+                } else {
+                    $toAdd = min($requestedAmount, $remaining);
+                    $bill->paid_amount = $currentPaid + $toAdd;
+                    if (floatval($bill->paid_amount) >= floatval($bill->total)) {
+                        $bill->payment_status = 1;
+                    }
+                }
                 $bill->save();
             }
         }
 
-        // Pay and update IPD bills
+        // Pay and update IPD bills (support partial via associated IpdBill.total_payments)
         if (!empty($ipdBillIds)) {
             $ipdBills = IpdPatientDepartment::whereIn('id', $ipdBillIds)
                 ->where('bill_status', 0)
                 ->get();
 
-            foreach ($ipdBills as $ipdPatient) {
-                $ipdPatient->bill_status = 1;
-                $ipdPatient->save();
+            $ipdMap = [];
+            foreach ($ipdBillItems as $it) {
+                $ipdMap[$it['id']] = $it['amount'];
+            }
 
-                // Also update the associated IpdBill if it exists
+            foreach ($ipdBills as $ipdPatient) {
+                $requestedAmount = $ipdMap[$ipdPatient->id] ?? null;
+
                 if ($ipdPatient->bill) {
-                    $ipdPatient->bill->total_payments = $ipdPatient->bill->total_charges;
-                    $ipdPatient->bill->save();
+                    $billRec = $ipdPatient->bill;
+                    $currentPayments = floatval($billRec->total_payments ?? 0);
+                    $totalCharges = floatval($billRec->total_charges ?? 0);
+                    if ($requestedAmount === null) {
+                        $billRec->total_payments = $totalCharges;
+                        $ipdPatient->bill_status = 1;
+                    } else {
+                        $toAdd = min($requestedAmount, max(0, $totalCharges - $currentPayments));
+                        $billRec->total_payments = $currentPayments + $toAdd;
+                        if ($billRec->total_payments >= $totalCharges) {
+                            $ipdPatient->bill_status = 1;
+                        }
+                    }
+                    $billRec->save();
+                } else {
+                    // No related bill record: fallback to marking as paid only if full payment requested
+                    if ($requestedAmount === null) {
+                        $ipdPatient->bill_status = 1;
+                    }
                 }
+
+                $ipdPatient->save();
             }
         }
 
-        // Pay and update OPD invoices
+        // Pay and update OPD invoices (support partial payments)
         if (!empty($opdBillIds)) {
             $opdBills = Invoice::whereIn('id', $opdBillIds)
                 ->where('status', 1)
                 ->get();
 
+            $opdMap = [];
+            foreach ($opdBillItems as $it) {
+                $opdMap[$it['id']] = $it['amount'];
+            }
+
             foreach ($opdBills as $invoice) {
-                $invoice->status = 0;
-                $invoice->balance = 0;
-                $invoice->total = $invoice->amount;
-                $invoice->paid_amount = $invoice->amount;
+                $requestedAmount = $opdMap[$invoice->id] ?? null;
+                $invoiceAmount = floatval($invoice->amount ?? 0);
+                $currentPaid = floatval($invoice->paid_amount ?? 0);
+
+                if ($requestedAmount === null) {
+                    // full payment
+                    $invoice->status = 0;
+                    $invoice->balance = 0;
+                    $invoice->total = $invoice->amount;
+                    $invoice->paid_amount = $invoice->amount;
+                } else {
+                    $toAdd = min($requestedAmount, max(0, $invoiceAmount - $currentPaid));
+                    $invoice->paid_amount = $currentPaid + $toAdd;
+                    $invoice->balance = max(0, $invoiceAmount - $invoice->paid_amount);
+                    if ($invoice->balance <= 0) {
+                        $invoice->status = 0;
+                    }
+                }
                 $invoice->save();
             }
         }
 
-        // Pay and update Pathology Tests
+        // Pay and update Pathology Tests (support partial)
         if (!empty($pathologyBillIds)) {
             $pathologyTests = PathologyTest::whereIn('id', $pathologyBillIds)
                 ->where('balance', '>', 0)
                 ->get();
 
+            $pathMap = [];
+            foreach ($pathologyBillItems as $it) {
+                $pathMap[$it['id']] = $it['amount'];
+            }
+
             foreach ($pathologyTests as $test) {
-                $test->amount_paid = $test->balance;
-                $test->balance = 0;
+                $requestedAmount = $pathMap[$test->id] ?? null;
+                $currentBalance = floatval($test->balance ?? 0);
+                if ($requestedAmount === null) {
+                    $test->amount_paid = $currentBalance;
+                    $test->balance = 0;
+                } else {
+                    $toAdd = min($requestedAmount, $currentBalance);
+                    $test->amount_paid = floatval($test->amount_paid ?? 0) + $toAdd;
+                    $test->balance = max(0, $currentBalance - $toAdd);
+                }
                 $test->save();
             }
         }
 
-        // Pay and update Radiology Tests
+        // Pay and update Radiology Tests (support partial)
         if (!empty($radiologyBillIds)) {
             $radiologyTests = RadiologyTest::whereIn('id', $radiologyBillIds)
                 ->where('balance', '>', 0)
                 ->get();
 
+            $radMap = [];
+            foreach ($radiologyBillItems as $it) {
+                $radMap[$it['id']] = $it['amount'];
+            }
+
             foreach ($radiologyTests as $test) {
-                $test->amount_paid = $test->balance;
-                $test->balance = 0;
+                $requestedAmount = $radMap[$test->id] ?? null;
+                $currentBalance = floatval($test->balance ?? 0);
+                if ($requestedAmount === null) {
+                    $test->amount_paid = $currentBalance;
+                    $test->balance = 0;
+                } else {
+                    $toAdd = min($requestedAmount, $currentBalance);
+                    $test->amount_paid = floatval($test->amount_paid ?? 0) + $toAdd;
+                    $test->balance = max(0, $currentBalance - $toAdd);
+                }
                 $test->save();
             }
         }
 
-        // Pay and update Maternity Bills
+        // Pay and update Maternity Bills (support partial)
         if (!empty($maternityBillIds)) {
             $maternityBills = MaternityPatientDepartment::whereIn('id', $maternityBillIds)
                 ->where('paid_amount', '<', DB::raw('standard_charge'))
                 ->get();
 
+            $matMap = [];
+            foreach ($maternityBillItems as $it) {
+                $matMap[$it['id']] = $it['amount'];
+            }
+
             foreach ($maternityBills as $maternity) {
-                $maternity->paid_amount = $maternity->standard_charge;
+                $requestedAmount = $matMap[$maternity->id] ?? null;
+                $currentPaid = floatval($maternity->paid_amount ?? 0);
+                $standard = floatval($maternity->standard_charge ?? 0);
+                if ($requestedAmount === null) {
+                    $maternity->paid_amount = $standard;
+                } else {
+                    $toAdd = min($requestedAmount, max(0, $standard - $currentPaid));
+                    $maternity->paid_amount = $currentPaid + $toAdd;
+                }
                 $maternity->save();
             }
         }

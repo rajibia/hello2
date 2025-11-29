@@ -25,6 +25,42 @@
         </button>
         @endif
     </div>
+
+    <!-- Incoming Request Modal (shown when a new request is created via OPD/IPD) -->
+    @if($showNewRequestModal && $incomingTest)
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold">New Lab Request Received</h5>
+                    <button type="button" class="btn-close" wire:click="$set('showNewRequestModal', false)"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">A new laboratory test request has been created.</p>
+                    <ul class="list-unstyled">
+                        <li><strong>Bill No:</strong> {{ $incomingTest->bill_no ?? 'N/A' }}</li>
+                        <li><strong>Patient:</strong> {{ $incomingTest->patient->patientUser->full_name ?? 'N/A' }}</li>
+                        <li><strong>Requested By:</strong> {{ $incomingTest->doctor->doctorUser->full_name ?? 'N/A' }}</li>
+                        <li><strong>Tests:</strong>
+                            @if($incomingTest->pathologyTestItems && $incomingTest->pathologyTestItems->count() > 0)
+                                {{ $incomingTest->pathologyTestItems->pluck('pathologytesttemplate.test_name')->filter()->join(', ') }}
+                            @else
+                                N/A
+                            @endif
+                        </li>
+                    </ul>
+                    <div class="alert alert-info mt-3">
+                        The person performing the test must first <strong>Accept</strong> this request before entering results.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="$set('showNewRequestModal', false)">Close</button>
+                    <button type="button" class="btn btn-success" wire:click="acceptTest({{ $incomingTest->id }})">Accept & Start</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
     <!-- Search -->
     <div class="row mb-4">
         <div class="col-md-6">

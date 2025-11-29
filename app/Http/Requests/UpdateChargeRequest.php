@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Models\Charge;
+use App\Models\ChargeType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateChargeRequest extends FormRequest
 {
@@ -22,6 +24,16 @@ class UpdateChargeRequest extends FormRequest
     {
         $rules = Charge::$rules;
         $rules['code'] = 'required|unique:charges,code,'.$this->route('charge')->id;
+
+        // Restrict charge_type to allowed types (Procedures, Investigations, Others)
+        $allowedNames = ['Procedures', 'Investigations', 'Others'];
+        $allowedIds = ChargeType::whereIn('name', $allowedNames)->where('status', 1)->pluck('id')->toArray();
+
+        if (!empty($allowedIds)) {
+            $rules['charge_type'] = ['required', Rule::in($allowedIds)];
+        } else {
+            $rules['charge_type'] = 'required';
+        }
 
         return $rules;
     }

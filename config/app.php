@@ -178,6 +178,8 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        Anhskohbo\NoCaptcha\NoCaptchaServiceProvider::class,
+
         Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
         Barryvdh\Debugbar\ServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
@@ -185,26 +187,23 @@ return [
         Rap2hpoutre\LaravelLogViewer\LaravelLogViewerServiceProvider::class,
     ])->toArray(),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Class Aliases
-    |--------------------------------------------------------------------------
-    |
-    | This array of class aliases will be registered when this application
-    | is started. However, feel free to register as many as you wish as
-    | the aliases are "lazy" loaded so they don't hinder performance.
-    |
-    */
+
+
+
+    
 
     'aliases' => Facade::defaultAliases()->merge([
-        'Debugbar' => Barryvdh\Debugbar\Facade::class,
-        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
-        'Flash' => Laracasts\Flash\Flash::class,
-        'Form' => Collective\Html\FormFacade::class,
-        'Html' => Collective\Html\HtmlFacade::class,
-        'Purifier' => Mews\Purifier\Facades\Purifier::class,
-        'Redis' => Illuminate\Support\Facades\Redis::class,
-        'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
-    ])->toArray(),
+    'Debugbar' => Barryvdh\Debugbar\Facade::class,
+    'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+    'Flash' => Laracasts\Flash\Flash::class,
+    'Form' => Collective\Html\FormFacade::class,
+    'Html' => Collective\Html\HtmlFacade::class,
+    'Purifier' => Mews\Purifier\Facades\Purifier::class,
+    'Redis' => Illuminate\Support\Facades\Redis::class,
+    'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
+
+    // ADD THIS
+    'NoCaptcha' => Anhskohbo\NoCaptcha\Facades\NoCaptcha::class,
+])->toArray(),
 
 ];

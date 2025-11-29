@@ -3,6 +3,8 @@
     {{ __('Supplier Ledger') }}
 @endsection
 
+@include('reports.partials._report-scripts')
+
 @section('page_css')
 <link rel="stylesheet" href="{{ asset('assets/css/dataTables.bootstrap4.min.css') }}">
 <style>
@@ -82,10 +84,8 @@
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h1>{{ __('Supplier Ledger') }}</h1>
                         <div class="d-flex align-items-center">
-                            <!-- <button id="printReport" class="btn btn-primary me-2">
-                                <i class="fas fa-print"></i> {{ __('Print Report') }}
-                            </button> -->
-                            <a href="{{ route('suppliers.index') }}" class="btn btn-outline-primary">
+                            @include('reports.partials._report-tools')
+                            <a href="{{ route('suppliers.index') }}" class="btn btn-outline-primary ms-2">
                                 <i class="fas fa-arrow-left"></i> {{ __('Back to Suppliers') }}
                             </a>
                         </div>
@@ -312,5 +312,4 @@
     // Set currency symbol for JavaScript
     window.currencySymbol = '{{ getCurrencySymbol() }}';
 </script>
-<script src="{{ asset('assets/js/suppliers/supplier_ledger.js') }}"></script>
 @endsection

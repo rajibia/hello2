@@ -1,7 +1,8 @@
 <script>
     let invoiceItemTemplate = $.templates('#invoiceItemTemplate');
-    let uniqueId = 0;
-    let charges = [];
+        let invoiceItemTemplate = $.templates('#invoiceItemTemplate');
+        let uniqueId = 0;
+        let charges = [];
     
     $(document).ready(function() {
         // Load charges data
@@ -274,24 +275,24 @@
         // Get charges data from the hidden field in the add button template
         let chargesJson = $('#createInvoiceCharges').val();
         console.log('Charges JSON:', chargesJson);
-        
+
         if (chargesJson) {
             try {
                 let chargesData = JSON.parse(chargesJson);
                 console.log('Parsed charges data:', chargesData);
                 charges = chargesData;
-                
+
                 // Clear existing invoice items
                 $('.invoice-item-container tr').remove();
-                
+
                 // Add first invoice item row with charges data
                 addInvoiceItemRow();
-                
+
                 // Initialize all select2 elements
                 setTimeout(function() {
                     initializeSelect2();
                 }, 200);
-                
+
             } catch (e) {
                 console.error('Error parsing charges data:', e);
                 // Still add a row even if there's an error parsing charges

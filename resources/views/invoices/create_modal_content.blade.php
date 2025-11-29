@@ -106,7 +106,7 @@
                     <input class="form-control qty" required name="quantity[]" type="number" min="1" value="1" placeholder="{{ __('messages.invoice.qty') }}">
                 </td>
                 <td class="text-center">
-                    <input class="form-control price-input price" required name="price[]" type="text" placeholder="{{ __('messages.invoice.price') }}">
+                    <input class="form-control price-input price" required name="price[]" type="text" placeholder="{{ __('messages.invoice.price') }}" readonly>
                 </td>
                 <td class="amount text-center item-total pt-5 ms-2 text-nowrap">
                     <span class="amount">0.00</span>

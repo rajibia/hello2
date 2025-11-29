@@ -33,18 +33,7 @@
     <div class="d-md-flex align-items-center justify-content-between mb-7">
         <h1 class="mb-0">{{ __('Transaction Report') }}</h1>
         <div class="d-flex align-items-center gap-2 no-print">
-            <!-- Export Buttons -->
-            <div class="btn-group me-2" role="group">
-                <button id="exportPdf" class="btn btn-danger btn-sm">
-                    PDF
-                </button>
-                <button id="exportExcel" class="btn btn-success btn-sm">
-                    Excel
-                </button>
-                <button id="exportCsv" class="btn btn-info btn-sm">
-                    CSV
-                </button>
-            </div>
+       
 
             <button id="printReport" class="btn btn-primary">
                 Print
@@ -118,8 +107,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
 
+<script src="{{ asset('assets/js/reports/export-utility.js') }}"></script>
 <script>
 let transactionTable = null;
+let initAttempts = 0;
 
 function initDataTable() {
     const tableEl =
@@ -128,108 +119,43 @@ function initDataTable() {
 
     if (!tableEl) {
         // Livewire might not have rendered yet
-        setTimeout(initDataTable, 300);
+        if (initAttempts++ < 20) setTimeout(initDataTable, 300);
         return;
     }
 
-    // Wait until table has body rows
-    if (!tableEl.querySelector('tbody tr')) {
-        setTimeout(initDataTable, 300);
-        return;
+    if (transactionTable) {
+        try { transactionTable.destroy(); } catch (e) {}
+        transactionTable = null;
     }
 
-    // Destroy old instance if any
-    if ($.fn.DataTable.isDataTable(tableEl)) {
-        $(tableEl).DataTable().destroy();
-    }
+    setTimeout(() => {
+        try {
+            transactionTable = ReportExporter.initializeExports($(tableEl), {
+                excludeColumns: [':last-child'],
+                reportTitle: 'Transaction Report',
+                fileName: 'transaction_report'
+            });
 
-    transactionTable = $(tableEl).DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            {
-                extend: 'excelHtml5',
-                text: 'Excel',
-                title: 'Transaction Report',
-                className: 'btn btn-success btn-sm buttons-excel',
-                exportOptions: { columns: [0,1,2,3,4,5,6] }
-            },
-            {
-                extend: 'csvHtml5',
-                text: 'CSV',
-                title: 'Transaction Report',
-                className: 'btn btn-info btn-sm buttons-csv',
-                exportOptions: { columns: [0,1,2,3,4,5,6] }
-            },
-            {
-                extend: 'pdfHtml5',
-                text: 'PDF',
-                title: 'Transaction Report',
-                className: 'btn btn-danger btn-sm buttons-pdf',
-                orientation: 'landscape',
-                pageSize: 'A4',
-                exportOptions: { columns: [0,1,2,3,4,5,6] },
-                customize: function (doc) {
-                    doc.pageMargins = [20, 20, 20, 20];
-                    doc.defaultStyle.fontSize = 9;
-                    doc.styles.tableHeader.fontSize = 10;
-                    doc.styles.title = { fontSize: 16, bold: true, alignment: 'center' };
-                }
-            }
-        ],
-        pageLength: 25,
-        order: [[1, 'desc']],
-        columnDefs: [
-            { targets: '_all', defaultContent: '' },
-            { targets: -1, orderable: false, searchable: false, className: 'actions-column' }
-        ],
-        searching: true,
-        paging: true,
-        info: true,
-        responsive: true,
-        destroy: true
-    });
-
-    // External buttons -> DataTables buttons (use API, no wrapper issues)
-    $('#exportExcel').off('click').on('click', function () {
-        if (transactionTable) {
-            transactionTable.button('.buttons-excel').trigger();
+            ReportExporter.initializeLiveSearch(transactionTable);
+            console.log('ReportExporter initialized for Transaction Report');
+        } catch (e) {
+            console.warn('Failed to init ReportExporter for transactions:', e);
+            if (initAttempts++ < 10) setTimeout(initDataTable, 500);
         }
-    });
-
-    $('#exportCsv').off('click').on('click', function () {
-        if (transactionTable) {
-            transactionTable.button('.buttons-csv').trigger();
-        }
-    });
-
-    $('#exportPdf').off('click').on('click', function () {
-        if (transactionTable) {
-            transactionTable.button('.buttons-pdf').trigger();
-        }
-    });
-
-    // Live Search
-    $('#liveSearch').off('input').on('input', function () {
-        if (transactionTable) {
-            transactionTable.search(this.value).draw();
-        }
-    });
-
-    console.log('DataTable + Export buttons initialized successfully');
+    }, 200);
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    initDataTable();
-});
+// Try immediately
+initDataTable();
 
-// Re-init after every Livewire DOM update
-document.addEventListener('livewire:update', () => {
-    initDataTable();
-});
+// Initialize on page load and Livewire updates
+document.addEventListener('DOMContentLoaded', initDataTable);
+document.addEventListener('livewire:load', initDataTable);
+document.addEventListener('livewire:update', initDataTable);
+document.addEventListener('livewire:updated', initDataTable);
 
-// Print Report
-$('#printReport').on('click', function () {
+// Print Report (keep existing specialized print behavior)
+$('#printReport').off('click').on('click', function () {
     const dateRange = $('.date-range-display').text().trim() || 'All Time';
     const totalAmount = $('.card-header .badge-success, .text-success.fw-bold').first().text().trim() || '0.00';
 

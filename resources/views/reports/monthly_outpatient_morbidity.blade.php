@@ -76,105 +76,53 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+<script src="{{ asset('assets/js/reports/export-utility.js') }}"></script>
 
 <script>
 let morbidityTable = null;
 let initAttempts = 0;
-const maxAttempts = 20;
 
 function safelyInitializeDataTable() {
-    // Find the table
-    const tableEl = document.querySelector('#morbidityReportWrapper table.table-row-dashed') ||
-                    document.querySelector('#morbidityReportWrapper table');
+    const wrapper = document.getElementById('morbidityReportWrapper');
+    if (!wrapper) return;
 
+    const tableEl = wrapper.querySelector('table');
     if (!tableEl) {
-        if (initAttempts++ < maxAttempts) {
-            setTimeout(safelyInitializeDataTable, 400);
-        }
+        if (initAttempts++ < 20) setTimeout(safelyInitializeDataTable, 400);
         return;
     }
 
-    // Critical: Wait for tbody to have rows AND match thead columns
-    const theadColumns = tableEl.querySelectorAll('thead th').length;
-    const tbodyRows = tableEl.querySelectorAll('tbody tr');
+    if (morbidityTable) { try { morbidityTable.destroy(); } catch(e) {} morbidityTable = null; }
 
-    if (tbodyRows.length === 0 || tbodyRows[0].children.length < theadColumns - 2) {
-        if (initAttempts++ < maxAttempts) {
-            setTimeout(safelyInitializeDataTable, 400);
-            return;
-        }
+    try {
+        morbidityTable = ReportExporter.initializeExports($(tableEl), {
+            excludeColumns: [],
+            reportTitle: 'Monthly Outpatient Morbidity Returns',
+            fileName: 'monthly_outpatient_morbidity'
+        });
+
+        ReportExporter.initializeLiveSearch(morbidityTable);
+        console.log('DataTable initialized successfully');
+    } catch (e) {
+        console.warn('DataTable init error:', e);
     }
-
-    // Destroy if already initialized
-    if ($.fn.DataTable.isDataTable(tableEl)) {
-        $(tableEl).DataTable().destroy();
-    }
-
-    // Safe initialization
-    morbidityTable = $(tableEl).DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            {
-                extend: 'excelHtml5',
-                text: 'Excel',
-                className: 'btn btn-success btn-sm'
-            },
-            {
-                extend: 'csvHtml5',
-                text: 'CSV',
-                className: 'btn btn-info btn-sm'
-            },
-            {
-                extend: 'pdfHtml5',
-                text: 'PDF',
-                className: 'btn btn-danger btn-sm',
-                orientation: 'landscape',
-                pageSize: 'A4',
-                title: 'Monthly Outpatient Morbidity Returns'
-            }
-        ],
-        pageLength: 25,
-        lengthMenu: [10, 25, 50, 100, 'All'],
-        order: [[0, 'asc']],
-        searching: true,
-        paging: true,
-        info: true,
-        autoWidth: false,
-        responsive: true,
-        // This is the KEY fix — prevents "unknown parameter" error
-        columnDefs: [
-            { targets: '_all', defaultContent: '' }
-        ],
-        // Extra safety
-        deferRender: true,
-        destroy: true
-    });
-
-    // Connect export buttons
-    $('#exportExcel').off('click').on('click', () => morbidityTable.button('.buttons-excel').trigger());
-    $('#exportCsv').off('click').on('click', () => morbidityTable.button('.buttons-csv').trigger());
-    $('#exportPdf').off('click').on('click', () => morbidityTable.button('.buttons-pdf').trigger());
-
-    // Live search
-    $('#liveSearch').off('input').on('input', function() {
-        morbidityTable.search(this.value).draw();
-    });
-
-    console.log('DataTable initialized successfully');
 }
 
-// Re-init on every Livewire update
+// Try immediately
+safelyInitializeDataTable();
+
 document.addEventListener('DOMContentLoaded', safelyInitializeDataTable);
 document.addEventListener('livewire:update', () => {
     initAttempts = 0;
-    if (morbidityTable) {
-        morbidityTable.destroy();
-        morbidityTable = null;
-    }
+    if (morbidityTable) { try { morbidityTable.destroy(); } catch(e) {} morbidityTable = null; }
     setTimeout(safelyInitializeDataTable, 300);
 });
+document.addEventListener('livewire:load', safelyInitializeDataTable);
 
-// Print Report (preserved from your working version)
+// Print and Export
+ReportExporter.initializePrint('printReport', '#morbidityReportWrapper table', 'Monthly Outpatient Morbidity Returns');
+
+// Preserve Livewire print behavior
 document.getElementById('printReport')?.addEventListener('click', () => {
     window.livewire.emit('printReport');
 });

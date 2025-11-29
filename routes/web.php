@@ -77,6 +77,7 @@ use App\Http\Controllers\LiveConsultationController;
 use App\Http\Controllers\LiveMeetingController;
 use App\Http\Controllers\LunchBreakController;
 use App\Http\Controllers\MailController;
+use App\Http\Controllers\ManagementPlanController;
 use App\Http\Controllers\ManualBillPaymentController;
 use App\Http\Controllers\MedicineBillController;
 use App\Http\Controllers\MedicineController;
@@ -921,6 +922,7 @@ Route::get('ipds/get-patient-cases', [IpdPatientDepartmentController::class, 'ge
         Route::resource('nursing_progress_notes', NursingProgressNotesController::class)->parameters(['nursing_progress_note' => 'nursing_progress_note']);
         Route::resource('systemic_examinations', SystemicExaminationController::class)->parameters(['systemic_examination' => 'systemic_examination']);
         Route::resource('notes', NotesController::class)->parameters(['note' => 'note']);
+        Route::resource('management_plans', ManagementPlanController::class)->parameters(['management_plan' => 'management_plan']);
         Route::resource('treatments', TreatmentsController::class)->parameters(['treatment' => 'treatment']);
         // Route::get('complaints', [VitalsController::class, 'index'])
         //         ->name('complaints.index')
@@ -1106,6 +1108,10 @@ Route::get('ipds/get-patient-cases', [IpdPatientDepartmentController::class, 'ge
         Route::get('reports/opd-statement', [ReportsController::class, 'opdStatementReport'])->name('reports.opd-statement');
         Route::get('reports/monthly-outpatient-morbidity', [ReportsController::class, 'monthlyOutpatientMorbidityReport'])->name('reports.monthly-outpatient-morbidity');
         Route::get('reports/patient-statement', [ReportsController::class, 'patientStatementReport'])->name('reports.patient-statement');
+        // Server-side exports for patient statement
+        Route::get('reports/patient-statement/export-excel', [ReportsController::class, 'exportPatientStatementExcel'])->name('reports.patient-statement.export-excel');
+        Route::get('reports/patient-statement/export-csv', [ReportsController::class, 'exportPatientStatementCsv'])->name('reports.patient-statement.export-csv');
+        Route::get('reports/patient-statement/export-pdf', [ReportsController::class, 'exportPatientStatementPdf'])->name('reports.patient-statement.export-pdf');
         Route::get('reports/transaction', [ReportsController::class, 'transactionReport'])->name('reports.transaction');
         Route::post('reports/transaction/export-pdf', [ReportsController::class, 'exportTransactionPDF'])->name('reports.transaction.export-pdf');
         Route::get('reports/opd-balance', [ReportsController::class, 'opdBalanceReport'])->name('reports.opd-balance');

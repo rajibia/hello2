@@ -174,14 +174,21 @@ class PathologyTestController extends AppBaseController
                 if ($input['create_from_route'] == 'patient') {
                     return redirect(route('patients.show', $input['patient_id']));
                 } elseif ($input['create_from_route'] == 'opd') {
-                    // OPD Redirection (Previously Fixed)
+                    // Redirect to the specific OPD patient show page (renders show_fields)
+                    $opd_id = $input['opd_id'] ?? null;
+                    if ($opd_id) {
+                        return redirect(route('opd.patient.show', $opd_id))->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
+                    }
+
+                    // Fallback: if no opd_id provided, go to OPD index
                     return redirect(route('opd.patient.index', ['filter' => 'upcoming']))->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
                 } else if ($input['create_from_route'] == 'ipd') {
-                    // 🎯 IPD REDIRECTION FIX: Redirect to the IPD patient detail page (Screenshot 3)
+                    // Redirect to the specific IPD patient show page (renders show_fields)
                     $ipd_id = $input['ipd_id'] ?? null;
                     if ($ipd_id) {
-                        return redirect(route('ipd.patient.department.show', $ipd_id))->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
+                        return redirect(route('ipd.patient.show', $ipd_id))->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
                     }
+
                     // Fallback to previous redirect if ipd_id is missing
                     return redirect()->back()->with('success', __('messages.pathology_tests').' '.__('messages.common.saved_successfully'));
                 } else if ($input['create_from_route'] == 'maternity') {

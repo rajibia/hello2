@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.1",
         "ext-json": "*",
+        "anhskohbo/no-captcha": "^3.7",
         "barryvdh/laravel-dompdf": "^2.0",
         "doctrine/dbal": "^3.5",
         "firebase/php-jwt": "^5.2",

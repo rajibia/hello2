@@ -242,129 +242,21 @@
     </div>
 </div>
 
-<!-- Required Libraries (Add to your layout or here) -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
 @section('page_scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const { jsPDF } = window.jspdf;
+    <script src="{{ asset('assets/js/reports/export-utility.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                const dt = ReportExporter.initializeExports($('#stockTable'), {
+                    excludeColumns: [],
+                    reportTitle: 'Inventory Stock Report',
+                    fileName: 'stock_report'
+                });
 
-    // Helper to get clean text from cell (remove badges, icons)
-    function getCellText(cell) {
-        const temp = document.createElement('div');
-        temp.innerHTML = cell.innerHTML;
-        temp.querySelectorAll('.badge, i, svg, img').forEach(el => el.remove());
-        return temp.textContent || temp.innerText || '';
-    }
-
-    // Get table data
-    function getTableData() {
-        const table = document.getElementById('stockTable');
-        const rows = table.querySelectorAll('tr');
-        const data = [];
-
-        rows.forEach((row, index) => {
-            const cells = row.querySelectorAll('th, td');
-            if (cells.length === 0) return;
-
-            const rowData = Array.from(cells).map(cell => getCellText(cell).trim());
-            if (index === 0) {
-                // Header
-                data.push(rowData);
-            } else if (row.closest('tfoot')) {
-                // Skip tfoot or include only total row if needed
-                if (row.querySelector('td') && row.querySelector('td').textContent.includes('Totals:')) {
-                    data.push(rowData);
-                }
-            } else {
-                data.push(rowData);
+                ReportExporter.initializePrint('printReport', '#stockTable', 'Inventory Stock Report');
+            } catch (e) {
+                console.error('ReportExporter init failed for stock report:', e);
             }
         });
-
-        return data;
-    }
-
-    // Export CSV
-    document.getElementById('exportCsv').addEventListener('click', () => {
-        const data = getTableData();
-        let csv = data.map(row => row.join(',')).join('\n');
-        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'Stock_Report_' + new Date().toISOString().slice(0,10) + '.csv';
-        link.click();
-    });
-
-    // Export Excel
-    document.getElementById('exportExcel').addEventListener('click', () => {
-        const data = getTableData();
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Stock Report");
-        XLSX.writeFile(wb, 'Stock_Report_' + new Date().toISOString().slice(0,10) + '.xlsx');
-    });
-
-    // Export PDF
-    document.getElementById('exportPdf').addEventListener('click', () => {
-        const doc = new jsPDF('l', 'mm', 'a4'); // landscape
-        doc.setFontSize(16);
-        doc.text("Inventory Stock Report", 14, 15);
-        doc.setFontSize(10);
-        doc.text("Generated on: " + new Date().toLocaleString(), 14, 22);
-
-        const tableData = getTableData().map(row => row.map(cell => cell.replace(/,/g, ' ')));
-
-        doc.autoTable({
-            head: [tableData[0]],
-            body: tableData.slice(1),
-            startY: 30,
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [54, 96, 146] },
-            columnStyles: {
-                4: { halign: 'right' },  // Buying Price
-                5: { halign: 'right' },  // Selling Price
-                11: { halign: 'right' }  // Value
-            }
-        });
-
-        doc.save('Stock_Report_' + new Date().toISOString().slice(0,10) + '.pdf');
-    });
-
-    // Print Functionality (already improved)
-    document.getElementById('printReport').addEventListener('click', function () {
-        let printWindow = window.open('', '_blank');
-        const table = document.getElementById('stockTable').outerHTML;
-
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Stock Report - {{ env('APP_NAME') }}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                    th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 12px; }
-                    th { background-color: #f0f0f0; }
-                    .badge { background: none !important; color: black !important; font-weight: normal; }
-                    h1, h2 { text-align: center; }
-                    @media print { body { padding: 10px; } }
-                </style>
-            </head>
-            <body>
-                <h1>{{ env('APP_NAME') }}</h1>
-                <h2>Inventory Stock Report</h2>
-                <p style="text-align:center;">Generated on: ${new Date().toLocaleString()}</p>
-                ${table}
-                <script>window.print();<\/script>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-    });
-});
-</script>
+    </script>
 @endsection

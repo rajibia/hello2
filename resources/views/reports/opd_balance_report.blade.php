@@ -23,6 +23,19 @@
                 <i class="fas fa-print"></i> Print
             </button>
 
+            <!-- Export Buttons -->
+            <div class="btn-group" role="group">
+                <button id="exportPdf" class="btn btn-danger btn-sm">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button id="exportExcel" class="btn btn-success btn-sm">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button id="exportCsv" class="btn btn-info btn-sm">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+            </div>
+
             <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
@@ -73,6 +86,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+<script src="{{ asset('assets/js/reports/export-utility.js') }}"></script>
 
 <script>
 let table = null;
@@ -86,52 +100,13 @@ function initializeDataTable() {
 
     setTimeout(() => {
         try {
-            table = $(tableEl).DataTable({
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        text: 'Excel',
-                        className: 'buttons-excel',
-                        exportOptions: { columns: ':not(:last-child)' } // Exclude Actions
-                    },
-                    {
-                        extend: 'csvHtml5',
-                        text: 'CSV',
-                        className: 'buttons-csv',
-                        exportOptions: { columns: ':not(:last-child)' }
-                    },
-                    {
-                        extend: 'pdfHtml5',
-                        text: 'PDF',
-                        className: 'buttons-pdf',
-                        orientation: 'landscape',
-                        exportOptions: { columns: ':not(:last-child)' },
-                        customize: function(doc) {
-                            doc.content[1].table.body.forEach(row => row.pop()); // Remove last column
-                        }
-                    }
-                ],
-                pageLength: 25,
-                order: [[0, 'desc']],
-                columnDefs: [
-                    { targets: '_all', defaultContent: '' },
-                    { targets: -1, className: 'actions-column' } // Mark Actions column
-                ],
-                searching: true,
-                destroy: true
+            table = ReportExporter.initializeExports($(tableEl), {
+                excludeColumns: [':last-child'],
+                reportTitle: 'OPD Balance Report',
+                fileName: 'opd_balance_report'
             });
 
-            // Connect top export buttons
-            $('#exportExcel').off('click').on('click', () => table.buttons('.buttons-excel').trigger());
-            $('#exportCsv').off('click').on('click', () => table.buttons('.buttons-csv').trigger());
-            $('#exportPdf').off('click').on('click', () => table.buttons('.buttons-pdf').trigger());
-
-            // Live Search
-            $('#liveSearch').off('input').on('input', function() {
-                table.search(this.value).draw();
-            });
-
+            ReportExporter.initializeLiveSearch(table);
         } catch (e) {
             console.warn('DataTable not ready yet:', e);
         }
@@ -143,6 +118,9 @@ document.addEventListener('DOMContentLoaded', initializeDataTable);
 document.addEventListener('livewire:load', initializeDataTable);
 document.addEventListener('livewire:update', initializeDataTable);
 
+// Try immediately
+initializeDataTable();
+
 // Fallback
 let attempts = 0;
 const interval = setInterval(() => {
@@ -150,26 +128,7 @@ const interval = setInterval(() => {
     initializeDataTable();
 }, 600);
 
-// === YOUR ORIGINAL PRINT LOGIC (100% PRESERVED & WORKING) ===
-$('#printReport').on('click', function() {
-    const dateRange = $('.date-range-display').text().trim().replace(/\s+/g, ' ') || 'All Time';
-
-    const tableEl = document.querySelector('#opdBalanceWrapper .table-responsive table') ||
-                    document.querySelector('#opdBalanceWrapper table');
-    if (!tableEl) {
-        alert('No data to print');
-        return;
-    }
-
-    const temp = tableEl.cloneNode(true);
-    // Remove Actions column
-    temp.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
-    temp.querySelectorAll('i, svg, img, button, .btn, .avatar').forEach(el => el.remove());
-
-    document.getElementById('printDateRange').textContent = dateRange;
-    document.getElementById('printContent').innerHTML = temp.outerHTML;
-
-    window.print();
-});
+// Print functionality
+ReportExporter.initializePrint('printReport', '#opdBalanceWrapper table', 'OPD Balance Report');
 </script>
 @endsection

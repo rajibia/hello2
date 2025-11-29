@@ -54,52 +54,73 @@ class GeneratePatientIdCardController extends AppBaseController
 
     public function downloadIdCard($id)
     {
-        $patientIdCardData = Patient::with(['patientUser','address','idCardTemplate'])->find($id);
-        $patientIdCardTemplateData = PatientIdCardTemplate::find($patientIdCardData->idCardTemplate->id);
+        try {
+            $patientIdCardData = Patient::with(['patientUser','address','idCardTemplate'])->findOrFail($id);
+            $patientIdCardTemplateData = PatientIdCardTemplate::findOrFail($patientIdCardData->template_id);
 
-        $url = route('qrcode.patient.show', $patientIdCardData->patient_unique_id);
-        $qrCode = QrCode::size(90)->generate($url);
+            $url = route('qrcode.patient.show', $patientIdCardData->patient_unique_id);
+            $qrCode = QrCode::size(90)->generate($url);
 
-        /* ---------------------------
-           SAFE IMAGE DOWNLOAD METHOD
-        ---------------------------- */
-        $imgUrl = $patientIdCardData->patientUser->image_url;
+            /* ---------------------------
+               OPTIMIZED IMAGE DOWNLOAD WITH CACHING
+            ---------------------------- */
+            $imgUrl = $patientIdCardData->patientUser->image_url;
+            $data = [];
 
-        $data = [];
-
-        if (!$imgUrl) {
-            // fallback image (blank profile)
-            $data['profile'] = null;
-        } else {
-
-            $arrUrl = explode('/', trim($imgUrl));
-
-            if (isset($arrUrl[2]) && $arrUrl[2] == "ui-avatars.com") {
-                $avatarUrl = "https://ui-avatars.com/api/?name=" .
-                    urlencode($patientIdCardData->patientUser->full_name) .
-                    "&size=100&rounded=true&color=fff&background=fc6369";
+            if (!$imgUrl) {
+                // fallback image (blank profile)
+                $data['profile'] = null;
             } else {
-                $avatarUrl = $imgUrl;
+                $arrUrl = explode('/', trim($imgUrl));
+
+                if (isset($arrUrl[2]) && $arrUrl[2] == "ui-avatars.com") {
+                    $avatarUrl = "https://ui-avatars.com/api/?name=" .
+                        urlencode($patientIdCardData->patientUser->full_name) .
+                        "&size=100&rounded=true&color=fff&background=fc6369";
+                } else {
+                    $avatarUrl = $imgUrl;
+                }
+
+                // Use caching to speed up downloads
+                $cacheKey = 'patient_avatar_' . md5($avatarUrl);
+                $avatarData = \Cache::remember($cacheKey, 3600, function() use ($avatarUrl) {
+                    return $this->safeDownload($avatarUrl);
+                });
+
+                // If download failed, avoid breaking PDF
+                $data['profile'] = $avatarData ? base64_encode($avatarData) : null;
             }
 
-            $avatarData = $this->safeDownload($avatarUrl);
+            $pdf = PDF::loadView(
+                'generate_patient_id_card.patient_id_card_pdf',
+                compact('patientIdCardData','patientIdCardTemplateData','qrCode','data')
+            );
 
-            // If download failed, avoid breaking PDF
-            $data['profile'] = $avatarData ? base64_encode($avatarData) : null;
+            // Configure PDF rendering options
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOption('isRemoteEnabled', true);
+            $pdf->setOption('isHtml5ParserEnabled', true);
+            $pdf->setOption('isPhpEnabled', true);
+            $pdf->setOption('defaultFont', 'DejaVu Sans');
+            $pdf->setOption('dpi', 150);
+            $pdf->setOption('fontSubsetting', false);
+
+            $filename = $patientIdCardData->patientUser->full_name . '-' . $patientIdCardData->id . '.pdf';
+
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Patient ID Card PDF generation error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return redirect()->back()->with('error', __('messages.something_went_wrong'));
         }
-
-        $pdf = PDF::loadView(
-            'generate_patient_id_card.patient_id_card_pdf',
-            compact('patientIdCardData','patientIdCardTemplateData','qrCode','data')
-        );
-
-        return $pdf->download($patientIdCardData->patientUser->full_name.'-'.$patientIdCardData->id.'.pdf');
     }
 
     /**
      * Safe file downloader (supports SSL + Catches Errors)
      */
-    private function safeDownload($url)
+    private function safeDownload($url, $timeout = 5)
     {
         if (!$url) return null;
 
@@ -108,6 +129,10 @@ class GeneratePatientIdCardController extends AppBaseController
                 "ssl" => [
                     "verify_peer" => false,
                     "verify_peer_name" => false,
+                ],
+                "http" => [
+                    "timeout" => $timeout,
+                    "method" => "GET",
                 ]
             ]);
 
@@ -116,6 +141,7 @@ class GeneratePatientIdCardController extends AppBaseController
             return $data ?: null;
 
         } catch (\Exception $e) {
+            \Log::warning('Failed to download image: ' . $e->getMessage());
             return null;
         }
     }

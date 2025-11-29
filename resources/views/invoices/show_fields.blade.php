@@ -61,7 +61,7 @@
                     <tbody>
                         @foreach ($invoice->invoiceItems as $index => $invoiceItem)
                             <tr class="text-end">
-                                <td class="pt-6 text-start">{{ $invoiceItem->charge->chargeCategory->name }}</td>
+                                <td class="pt-6 text-start">{{ data_get($invoiceItem, 'charge.chargeCategory.name', __('messages.common.n/a')) }}</td>
                                 <td class="pt-6 text-start">{!! $invoiceItem->description != '' ? nl2br(e($invoiceItem->description)) : __('messages.common.n/a') !!}</td>
                                 <td class="pt-6">{{ $invoiceItem->quantity }}</td>
                                 <td class="pt-6">
