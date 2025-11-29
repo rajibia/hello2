@@ -193,7 +193,7 @@
             <!-- Pagination -->
             @if($templates->hasPages())
                 <div class="d-flex justify-content-center mt-4">
-                    {{ $templates->links('vendor.pagination.bootstrap-4') }}
+                    {{ $templates->links('vendor.pagination.livewire-bootstrap-4') }}
                 </div>
                             @endif
         </div>

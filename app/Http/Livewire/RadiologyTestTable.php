@@ -1139,4 +1139,12 @@ class RadiologyTestTable extends Component
 
         return view('livewire.radiology-test-table', compact('tests', 'patients', 'doctors', 'caseIds', 'opds', 'ipds'));
     }
+
+    /**
+     * Navigate to a specific page in pagination (for use with goToPage button)
+     */
+    public function goToPage($page)
+    {
+        $this->setPage($page);
+    }
 }

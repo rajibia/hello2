@@ -1079,4 +1079,12 @@ class PathologyTestTable extends Component
 
         return view('livewire.pathology-test-table', compact('tests', 'patients', 'doctors'));
     }
+
+    /**
+     * Navigate to a specific page in pagination (for use with goToPage button)
+     */
+    public function goToPage($page)
+    {
+        $this->setPage($page);
+    }
 }

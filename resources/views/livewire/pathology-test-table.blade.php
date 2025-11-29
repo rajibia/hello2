@@ -275,7 +275,7 @@
 
             <!-- Pagination -->
             <div class="d-flex justify-content-center">
-                {{ $tests->links('vendor.pagination.bootstrap-4') }}
+                {{ $tests->links('vendor.pagination.livewire-bootstrap-4') }}
             </div>
         </div>
     </div>

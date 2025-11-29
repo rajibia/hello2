@@ -266,7 +266,7 @@
             <!-- Pagination - Only show for non-IPD context -->
             @if(!$ipdId && $tests->hasPages())
                 <div class="d-flex justify-content-center mt-4">
-                    {{ $tests->links('vendor.pagination.bootstrap-4') }}
+                    {{ $tests->links('vendor.pagination.livewire-bootstrap-4') }}
                 </div>
             @endif
         </div>
