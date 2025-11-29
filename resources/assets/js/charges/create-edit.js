@@ -24,15 +24,20 @@ function loadChargeCreateEdit() {
         // *** FIX: Use direct jQuery change binding for Select2 ***
         $("#chargeTypeId").on('change', function () {
             const selectedChargeTypeId = $(this).val();
+                let selectedText = $(this).find('option:selected').text().trim();
             
             // 1. Load Charge Categories (Existing essential logic)
             changeChargeCategory("#chargeCategoryId", selectedChargeTypeId);
             
             // 2. Generate and set the unique code
-            if (selectedChargeTypeId) {
-                generateCodeForCharge(selectedChargeTypeId, '#code');
+                if (selectedText === '' || selectedText === null) {
+                    $('#code').val('');
+                    return;
             } else {
-                $('#code').val('');
+                    let prefix = selectedText.substring(0, 3).toUpperCase();
+                    let randomNumber = Math.floor(100 + Math.random() * 900);
+                    let finalCode = prefix + '-' + randomNumber;
+                    $('#code').val(finalCode);
             }
         });
         // *******************************************************
@@ -58,6 +63,27 @@ function loadChargeCreateEdit() {
                 "messages.pathology_category.select_charge_category"
             ),
         });
+        
+        // *** FIX: Add change event listener for edit form's charge type ***
+        $("#editChargeTypeId").on('change', function () {
+            const selectedChargeTypeId = $(this).val();
+            let selectedText = $(this).find('option:selected').text().trim();
+            
+            // 1. Load Charge Categories when type changes
+            changeChargeCategory("#editChargeCategoryId", selectedChargeTypeId);
+            
+            // 2. Generate and set the unique code
+            if (selectedText === '' || selectedText === null) {
+                $('#editCode').val('');
+                return;
+            } else {
+                let prefix = selectedText.substring(0, 3).toUpperCase();
+                let randomNumber = Math.floor(100 + Math.random() * 900);
+                let finalCode = prefix + '-' + randomNumber;
+                $('#editCode').val(finalCode);
+            }
+        });
+        // *******************************************************
     }
 
     if (editChargeCategoryIdElement.length) {

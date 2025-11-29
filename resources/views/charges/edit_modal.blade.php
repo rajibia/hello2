@@ -15,6 +15,9 @@
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('charge_type', __('messages.charge_category.charge_type') . ':', ['class' => 'form-label']) }}
                         <span class="required"></span>
+                        @php
+                            $chargeTypes = \App\Models\ChargeType::where('status', 1)->get()->pluck('name', 'id')->toArray();
+                        @endphp
                         {{ Form::select('charge_type', $chargeTypes, null, ['class' => 'form-select', 'required', 'id' => 'editChargeTypeId', 'placeholder' => __('messages.common.choose') . ' ' . __('messages.charge_category.charge_type')]) }}
                     </div>
                     <div class="form-group col-sm-6 mb-5">

@@ -14,10 +14,9 @@
                         {{ Form::label('charge_type', __('messages.charge_category.charge_type') . ':', ['class' => 'form-label']) }}
                         <span class="required"></span>
                         @php
-                            $allowedNames = ['Procedures', 'Investigations', 'Others'];
-                            $allowedTypes = \App\Models\ChargeType::whereIn('name', $allowedNames)->where('status', 1)->get()->pluck('name', 'id')->toArray();
+                            $chargeTypes = \App\Models\ChargeType::where('status', 1)->get()->pluck('name', 'id')->toArray();
                         @endphp
-                        {{ Form::select('charge_type', $allowedTypes, null, ['class' => 'form-select', 'required', 'id' => 'chargeTypeId', 'placeholder' => __('messages.common.choose') . ' ' . __('messages.charge_category.charge_type')]) }}
+                        {{ Form::select('charge_type', $chargeTypes, null, ['class' => 'form-select', 'required', 'id' => 'chargeTypeId', 'placeholder' => __('messages.common.choose') . ' ' . __('messages.charge_category.charge_type')]) }}
                     </div>
                     <div class="form-group col-sm-6 mb-5">
                         {{ Form::label('charge_category_id', __('messages.charge.charge_category') . ':', ['class' => 'form-label']) }}

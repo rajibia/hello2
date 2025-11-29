@@ -98,7 +98,7 @@
     </div>
 </div>
 
-<!-- JavaScript Magic -->
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Click to copy functionality
